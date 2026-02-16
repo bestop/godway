@@ -214,18 +214,10 @@ export function addExperience(
   let newRealm = false;
   
   // 检查是否升级
-  while (currentExp >= character.expToNext) {
+  while (currentExp >= character.expToNext && currentLevel < 9) {
     currentExp -= character.expToNext;
     currentLevel++;
     leveledUp = true;
-    
-    // 检查是否满层（需要渡劫）
-    if (currentLevel > 9) {
-      // 在渡劫之前保持在9层
-      currentLevel = 9;
-      currentExp = character.expToNext - 1; // 经验保持在满级前
-      break;
-    }
     
     // 更新下一级所需经验
     character = {
@@ -235,6 +227,9 @@ export function addExperience(
       expToNext: calculateExpToNext(currentRealm, currentLevel)
     };
   }
+  
+  // 9层时经验可以继续累积，但需要渡劫才能升级
+  // 不再重置经验，让玩家可以累积超过上限的经验
   
   return {
     character: {

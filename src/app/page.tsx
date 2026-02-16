@@ -464,6 +464,10 @@ export default function Home() {
                   <Store className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">市场</span>
                 </TabsTrigger>
+                <TabsTrigger value="tribulation" className="text-xs sm:text-sm data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 py-2">
+                  <Zap className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">渡劫</span>
+                </TabsTrigger>
                 <TabsTrigger value="daily" className="text-xs sm:text-sm data-[state=active]:bg-green-100 data-[state=active]:text-green-700 py-2">
                   <Calendar className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">签到</span>
@@ -542,6 +546,21 @@ export default function Home() {
                   playerId={playerId}
                   onBuy={buyFromMarket}
                   onBuyNpcItem={buyNpcItem}
+                />
+              </TabsContent>
+
+              <TabsContent value="tribulation" className="mt-4">
+                <Tribulation 
+                  character={character}
+                  onTribulation={() => {
+                    const result = doTribulation();
+                    if (result.success) {
+                      setStatistics(prev => ({
+                        ...prev,
+                        tribulationSuccesses: prev.tribulationSuccesses + 1
+                      }));
+                    }
+                  }}
                 />
               </TabsContent>
 

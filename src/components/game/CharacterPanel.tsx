@@ -72,6 +72,14 @@ export function CharacterPanel({ character, inventory, onRestore, onMeditate }: 
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* 9层渡劫提示 */}
+        {character.level >= 9 && (
+          <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg p-3 text-center animate-pulse">
+            <div className="text-sm font-bold">⚡ 境界已满，请前往渡劫！</div>
+            <div className="text-xs mt-1 text-purple-100">渡劫成功后可进入下一境界</div>
+          </div>
+        )}
+        
         {/* 经验条 */}
         <div className="space-y-1">
           <div className="flex justify-between text-sm">
@@ -81,9 +89,15 @@ export function CharacterPanel({ character, inventory, onRestore, onMeditate }: 
             </span>
             <span className="text-slate-600">
               {character.exp.toLocaleString()} / {character.expToNext.toLocaleString()}
+              {character.level >= 9 && character.exp >= character.expToNext && (
+                <span className="text-purple-500 ml-1">(已满)</span>
+              )}
             </span>
           </div>
-          <Progress value={expPercent} className="h-2 bg-amber-100 [&>div]:bg-gradient-to-r [&>div]:from-amber-400 [&>div]:to-amber-500" />
+          <Progress 
+            value={Math.min(100, expPercent)} 
+            className={`h-2 bg-amber-100 [&>div]:bg-gradient-to-r [&>div]:from-amber-400 [&>div]:to-amber-500 ${character.level >= 9 && character.exp >= character.expToNext ? '[&>div]:from-purple-400 [&>div]:to-purple-500' : ''}`} 
+          />
         </div>
 
         {/* 气血条 */}

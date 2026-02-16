@@ -77,7 +77,7 @@ interface UseGameStateReturn {
   
   // 其他操作
   doMeditate: () => void;
-  doTribulation: () => void;
+  doTribulation: () => { success: boolean; message: string };
   restore: () => void;
 }
 
@@ -464,7 +464,7 @@ export function useGameState(): UseGameStateReturn {
 
   // 渡劫
   const doTribulation = useCallback(() => {
-    if (!character) return;
+    if (!character) return { success: false, message: '角色不存在' };
     
     const { success, message, character: updatedCharacter } = attemptTribulation(character);
     setCharacter(updatedCharacter);
@@ -475,6 +475,8 @@ export function useGameState(): UseGameStateReturn {
       const stats = calculateStatsWithEquipment(updatedCharacter);
       setCharacter(prev => prev ? { ...prev, stats } : prev);
     }
+    
+    return { success, message };
   }, [character, addLog]);
 
   // 使用回血丹恢复
