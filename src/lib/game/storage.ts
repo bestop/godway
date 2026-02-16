@@ -1,5 +1,5 @@
 // 本地存储管理
-import { GameState, Character, InventoryItem, GameLogEntry, MarketListing, GameItem } from '@/types/game';
+import { GameState, Character, InventoryItem, GameLogEntry, MarketListing, GameItem, QuestProgress, AchievementProgress, DungeonProgress, IdleReward, DailySignIn } from '@/types/game';
 import { PILLS, TRIBULATION_PILLS, WEAPONS, ARMORS, ACCESSORIES, MATERIALS, ALL_ITEMS } from './gameData';
 
 const STORAGE_KEYS = {
@@ -7,7 +7,13 @@ const STORAGE_KEYS = {
   INVENTORY: 'xiuxian_inventory',
   LOGS: 'xiuxian_logs',
   MARKET: 'xiuxian_market',
-  PLAYER_ID: 'xiuxian_player_id'
+  PLAYER_ID: 'xiuxian_player_id',
+  QUEST_PROGRESS: 'xiuxian_quest_progress',
+  ACHIEVEMENT_PROGRESS: 'xiuxian_achievement_progress',
+  DUNGEON_PROGRESS: 'xiuxian_dungeon_progress',
+  IDLE_REWARD: 'xiuxian_idle_reward',
+  DAILY_SIGN_IN: 'xiuxian_daily_sign_in',
+  STATISTICS: 'xiuxian_statistics'
 };
 
 // NPC商店名称
@@ -306,4 +312,162 @@ export function importGameData(jsonString: string): boolean {
     console.error('导入游戏数据失败:', error);
     return false;
   }
+}
+
+export interface GameStatistics {
+  totalBattles: number;
+  totalWins: number;
+  totalGoldEarned: number;
+  totalExpEarned: number;
+  monstersKilled: Record<string, number>;
+  tribulationSuccesses: number;
+  tribulationAttempts: number;
+  itemsUsed: number;
+  lastPlayTime: number;
+  totalPlayTime: number;
+}
+
+export function getDefaultStatistics(): GameStatistics {
+  return {
+    totalBattles: 0,
+    totalWins: 0,
+    totalGoldEarned: 0,
+    totalExpEarned: 0,
+    monstersKilled: {},
+    tribulationSuccesses: 0,
+    tribulationAttempts: 0,
+    itemsUsed: 0,
+    lastPlayTime: Date.now(),
+    totalPlayTime: 0
+  };
+}
+
+export function saveStatistics(stats: GameStatistics): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.STATISTICS, JSON.stringify(stats));
+  } catch (error) {
+    console.error('保存统计数据失败:', error);
+  }
+}
+
+export function loadStatistics(): GameStatistics {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.STATISTICS);
+    if (data) {
+      return { ...getDefaultStatistics(), ...JSON.parse(data) };
+    }
+  } catch (error) {
+    console.error('加载统计数据失败:', error);
+  }
+  return getDefaultStatistics();
+}
+
+export function saveQuestProgress(progress: QuestProgress[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.QUEST_PROGRESS, JSON.stringify(progress));
+  } catch (error) {
+    console.error('保存任务进度失败:', error);
+  }
+}
+
+export function loadQuestProgress(): QuestProgress[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.QUEST_PROGRESS);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('加载任务进度失败:', error);
+  }
+  return [];
+}
+
+export function saveAchievementProgress(progress: AchievementProgress[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.ACHIEVEMENT_PROGRESS, JSON.stringify(progress));
+  } catch (error) {
+    console.error('保存成就进度失败:', error);
+  }
+}
+
+export function loadAchievementProgress(): AchievementProgress[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.ACHIEVEMENT_PROGRESS);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('加载成就进度失败:', error);
+  }
+  return [];
+}
+
+export function saveDungeonProgress(progress: DungeonProgress[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DUNGEON_PROGRESS, JSON.stringify(progress));
+  } catch (error) {
+    console.error('保存副本进度失败:', error);
+  }
+}
+
+export function loadDungeonProgress(): DungeonProgress[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.DUNGEON_PROGRESS);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('加载副本进度失败:', error);
+  }
+  return [];
+}
+
+export function saveIdleReward(reward: IdleReward): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.IDLE_REWARD, JSON.stringify(reward));
+  } catch (error) {
+    console.error('保存挂机收益失败:', error);
+  }
+}
+
+export function loadIdleReward(): IdleReward {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.IDLE_REWARD);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('加载挂机收益失败:', error);
+  }
+  return {
+    lastClaimTime: Date.now(),
+    accumulatedExp: 0,
+    accumulatedGold: 0,
+    maxAccumulationHours: 12
+  };
+}
+
+export function saveDailySignIn(signIn: DailySignIn): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DAILY_SIGN_IN, JSON.stringify(signIn));
+  } catch (error) {
+    console.error('保存签到数据失败:', error);
+  }
+}
+
+export function loadDailySignIn(): DailySignIn {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.DAILY_SIGN_IN);
+    if (data) {
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('加载签到数据失败:', error);
+  }
+  return {
+    lastSignInDate: '',
+    consecutiveDays: 0,
+    totalDays: 0,
+    rewards: []
+  };
 }

@@ -40,7 +40,7 @@ import {
 } from '@/lib/game/storage';
 import { getRecommendedMonster, getItemById } from '@/lib/game/gameData';
 
-export type GameTab = 'battle' | 'cultivation' | 'tribulation' | 'inventory' | 'market' | 'map';
+export type GameTab = 'battle' | 'cultivation' | 'tribulation' | 'inventory' | 'market' | 'map' | 'quest' | 'achievement' | 'dungeon' | 'daily';
 
 interface UseGameStateReturn {
   // 状态
@@ -58,12 +58,14 @@ interface UseGameStateReturn {
   resetGame: () => void;
   setTab: (tab: GameTab) => void;
   addLog: (type: GameLogEntry['type'], message: string) => void;
+  setCharacter: (character: Character) => void;
+  setInventory: (inventory: InventoryItem[]) => void;
   
   // 战斗相关
-  startBattle: (monster: Monster) => void;
-  quickBattle: () => void;
+  startBattle: (monster: Monster, isGodMode?: boolean) => void;
+  quickBattle: (isGodMode?: boolean) => void;
   endBattle: () => void;
-  mapEncounter: (monster: Monster) => void;
+  mapEncounter: (monster: Monster, isGodMode?: boolean) => void;
   
   // 物品相关
   useItem: (item: GameItem) => void;
@@ -107,6 +109,7 @@ export function useGameState(): UseGameStateReturn {
   const [currentTab, setCurrentTab] = useState<GameTab>('battle');
   const [isLoading, setIsLoading] = useState(true);
   const [playerId, setPlayerId] = useState<string>('');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // 客户端挂载后初始化数据 - 使用回调形式避免同步setState警告
   useEffect(() => {
@@ -119,6 +122,7 @@ export function useGameState(): UseGameStateReturn {
       setMarket(initialState.market);
       setPlayerId(initialState.playerId);
       setIsLoading(false);
+      setIsInitialized(true);
     };
     
     // 使用 setTimeout 0 确保在渲染完成后执行
@@ -126,24 +130,30 @@ export function useGameState(): UseGameStateReturn {
     return () => clearTimeout(timer);
   }, []);
 
-  // 自动保存
+  // 自动保存 - 只在初始化完成后保存
   useEffect(() => {
-    if (character) {
+    if (isInitialized && character) {
       saveCharacter(character);
     }
-  }, [character]);
+  }, [character, isInitialized]);
 
   useEffect(() => {
-    saveInventory(inventory);
-  }, [inventory]);
+    if (isInitialized) {
+      saveInventory(inventory);
+    }
+  }, [inventory, isInitialized]);
 
   useEffect(() => {
-    saveLogs(logs);
-  }, [logs]);
+    if (isInitialized) {
+      saveLogs(logs);
+    }
+  }, [logs, isInitialized]);
 
   useEffect(() => {
-    saveMarket(market);
-  }, [market]);
+    if (isInitialized) {
+      saveMarket(market);
+    }
+  }, [market, isInitialized]);
 
   // 添加日志
   const addLog = useCallback((type: GameLogEntry['type'], message: string) => {
@@ -207,14 +217,14 @@ export function useGameState(): UseGameStateReturn {
   }, [character, addLog]);
 
   // 快速战斗
-  const quickBattle = useCallback(() => {
+  const quickBattle = useCallback((isGodMode: boolean = false) => {
     if (!character || battle.inBattle) return;
     
     const monster = getRecommendedMonster(character.realm, character.level);
     if (!monster) return;
     
     // 执行战斗
-    const { logs: battleLogs, result, finalHp } = executeBattle(character, monster);
+    const { logs: battleLogs, result, finalHp } = executeBattle(character, monster, isGodMode);
     
     // 更新角色状态
     let updatedCharacter = { ...character };
@@ -262,11 +272,11 @@ export function useGameState(): UseGameStateReturn {
   }, [character, battle.inBattle, inventory, addLog]);
 
   // 地图遇怪战斗
-  const mapEncounter = useCallback((monster: Monster) => {
+  const mapEncounter = useCallback((monster: Monster, isGodMode: boolean = false) => {
     if (!character) return;
     
     // 执行战斗
-    const { logs: battleLogs, result, finalHp } = executeBattle(character, monster);
+    const { logs: battleLogs, result, finalHp } = executeBattle(character, monster, isGodMode);
     
     // 更新角色状态
     let updatedCharacter = { ...character };
@@ -362,18 +372,18 @@ export function useGameState(): UseGameStateReturn {
     if (!character || item.type !== 'equipment') return;
     
     const equipment = item as any;
-    const message = equipItem(character, equipment);
-    addLog('item', message);
+    const result = equipItem(character, equipment);
+    addLog('item', result.message);
+    
+    if (!result.success) {
+      return;
+    }
+    
+    // 更新角色状态
+    setCharacter(result.character);
     
     // 从背包移除
     setInventory(prev => removeFromInventory(prev, item.id, 1));
-    
-    // 重新计算属性
-    setCharacter(prev => {
-      if (!prev) return prev;
-      const stats = calculateStatsWithEquipment(prev);
-      return { ...prev, stats };
-    });
   }, [character, addLog]);
 
   // 卸下装备
@@ -512,6 +522,8 @@ export function useGameState(): UseGameStateReturn {
     resetGame,
     setTab,
     addLog,
+    setCharacter,
+    setInventory,
     startBattle,
     quickBattle,
     mapEncounter,

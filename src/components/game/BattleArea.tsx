@@ -24,6 +24,7 @@ interface BattleAreaProps {
   battleLogs: GameLogEntry[];
   onQuickBattle: () => void;
   addLog: (type: GameLogEntry['type'], message: string) => void;
+  isGodMode?: boolean;
 }
 
 // 战斗回合数据
@@ -34,7 +35,7 @@ interface BattleRound {
   monsterHp: number;
 }
 
-export function BattleArea({ character, battleLogs, onQuickBattle, addLog }: BattleAreaProps) {
+export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGodMode = false }: BattleAreaProps) {
   const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
   const [isBattling, setIsBattling] = useState(false);
   const [battleResult, setBattleResult] = useState<'win' | 'lose' | null>(null);
@@ -80,7 +81,8 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog }: Bat
         break;
       }
       
-      const monsterDamage = Math.max(1, Math.floor(monster.atk * (1 - playerDef / (playerDef + 100))));
+      // 无敌模式下不受伤
+      const monsterDamage = isGodMode ? 0 : Math.max(1, Math.floor(monster.atk * (1 - playerDef / (playerDef + 100))));
       playerHp -= monsterDamage;
       
       rounds.push({
@@ -92,7 +94,7 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog }: Bat
     }
     
     return rounds;
-  }, [character]);
+  }, [character, isGodMode]);
   
   // 执行战斗动画序列（优化版 - 更快速流畅）
   useEffect(() => {

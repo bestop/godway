@@ -11,7 +11,10 @@ import {
   Zap,
   Package,
   Store,
-  Info
+  Info,
+  Scroll,
+  Trophy,
+  Sparkles
 } from 'lucide-react';
 
 interface GameLogProps {
@@ -27,6 +30,9 @@ export function GameLog({ logs }: GameLogProps) {
       case 'item': return <Package className="w-4 h-4 text-blue-500" />;
       case 'market': return <Store className="w-4 h-4 text-amber-500" />;
       case 'system': return <Info className="w-4 h-4 text-slate-400" />;
+      case 'quest': return <Scroll className="w-4 h-4 text-indigo-500" />;
+      case 'achievement': return <Trophy className="w-4 h-4 text-yellow-500" />;
+      case 'event': return <Sparkles className="w-4 h-4 text-pink-500" />;
     }
   };
 
@@ -38,6 +44,9 @@ export function GameLog({ logs }: GameLogProps) {
       case 'item': return 'text-blue-600';
       case 'market': return 'text-amber-600';
       case 'system': return 'text-slate-600';
+      case 'quest': return 'text-indigo-600';
+      case 'achievement': return 'text-yellow-600';
+      case 'event': return 'text-pink-600';
     }
   };
 
@@ -48,7 +57,10 @@ export function GameLog({ logs }: GameLogProps) {
       tribulation: '渡劫',
       item: '物品',
       market: '市场',
-      system: '系统'
+      system: '系统',
+      quest: '任务',
+      achievement: '成就',
+      event: '事件'
     };
     return names[type];
   };

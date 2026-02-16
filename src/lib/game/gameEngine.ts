@@ -112,7 +112,8 @@ export function calculateBattleRound(
 // 执行战斗
 export function executeBattle(
   character: Character,
-  monster: Monster
+  monster: Monster,
+  isGodMode: boolean = false
 ): { logs: BattleLogEntry[]; result: 'win' | 'lose'; finalHp: number } {
   const logs: BattleLogEntry[] = [];
   let playerHp = character.stats.hp;
@@ -122,6 +123,15 @@ export function executeBattle(
   const playerStats = calculateStatsWithEquipment(character);
   const playerAtk = playerStats.atk;
   const playerDef = playerStats.def;
+  
+  if (isGodMode) {
+    logs.push({
+      id: generateId(),
+      round: 0,
+      type: 'player_attack',
+      message: '🛡️ 无敌模式激活！你不会受到任何伤害！'
+    });
+  }
   
   while (playerHp > 0 && monsterHp > 0) {
     round++;
@@ -144,15 +154,25 @@ export function executeBattle(
     
     if (monsterHp <= 0) break;
     
-    // 怪物攻击
-    playerHp -= monsterDamage;
-    logs.push({
-      id: generateId(),
-      round,
-      type: 'monster_attack',
-      message: `${monster.name}对你造成了${monsterDamage}点伤害`,
-      damage: monsterDamage
-    });
+    // 怪物攻击 - 无敌模式下不受伤害
+    if (isGodMode) {
+      logs.push({
+        id: generateId(),
+        round,
+        type: 'monster_attack',
+        message: `${monster.name}的攻击被无敌护盾完全抵挡！`,
+        damage: 0
+      });
+    } else {
+      playerHp -= monsterDamage;
+      logs.push({
+        id: generateId(),
+        round,
+        type: 'monster_attack',
+        message: `${monster.name}对你造成了${monsterDamage}点伤害`,
+        damage: monsterDamage
+      });
+    }
   }
   
   const result = playerHp > 0 ? 'win' : 'lose';
@@ -298,7 +318,11 @@ export function applyItem(
     message = `使用了${item.name}，渡劫时将增加10%成功率`;
   } else if (item.type === 'equipment') {
     const equipment = item as EquipmentItem;
-    message = equipItem(updatedCharacter, equipment);
+    const result = equipItem(updatedCharacter, equipment);
+    message = result.message;
+    if (result.success) {
+      updatedCharacter = result.character;
+    }
     // 不消耗装备
     return { character: updatedCharacter, inventory: updatedInventory, message };
   }
@@ -310,7 +334,7 @@ export function applyItem(
 }
 
 // 装备物品
-export function equipItem(character: Character, equipment: EquipmentItem): string {
+export function equipItem(character: Character, equipment: EquipmentItem): { success: boolean; message: string; character: Character } {
   const slot = equipment.equipmentType;
   const oldEquipment = character.equipment[slot];
   
@@ -319,22 +343,32 @@ export function equipItem(character: Character, equipment: EquipmentItem): strin
     const currentIndex = REALMS.findIndex(r => r.name === character.realm);
     const requiredIndex = REALMS.findIndex(r => r.name === equipment.requiredRealm);
     if (currentIndex < requiredIndex) {
-      return `境界不足，需要${equipment.requiredRealm}才能装备`;
+      return { 
+        success: false, 
+        message: `境界不足，需要${equipment.requiredRealm}才能装备`, 
+        character 
+      };
     }
   }
   
-  character.equipment[slot] = equipment;
+  const updatedCharacter = {
+    ...character,
+    equipment: {
+      ...character.equipment,
+      [slot]: equipment
+    }
+  };
   
   // 更新属性
-  const newStats = calculateStatsWithEquipment(character);
-  character.stats = newStats;
+  const newStats = calculateStatsWithEquipment(updatedCharacter);
+  updatedCharacter.stats = newStats;
   
   let message = `装备了${equipment.name}`;
   if (oldEquipment) {
     message += `，替换了${oldEquipment.name}`;
   }
   
-  return message;
+  return { success: true, message, character: updatedCharacter };
 }
 
 // 卸下装备

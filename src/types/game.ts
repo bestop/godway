@@ -1,5 +1,40 @@
 // 游戏类型定义
 
+// 技能类型
+export type SkillType = 'attack' | 'heal' | 'buff' | 'debuff' | 'special';
+export type SkillTarget = 'self' | 'enemy' | 'all';
+
+// 技能定义
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: SkillType;
+  target: SkillTarget;
+  mpCost: number;
+  cooldown: number;
+  effect: {
+    damage?: number;
+    damageMultiplier?: number;
+    heal?: number;
+    healMultiplier?: number;
+    buffAtk?: number;
+    buffDef?: number;
+    debuffAtk?: number;
+    debuffDef?: number;
+    duration?: number;
+  };
+  requiredRealm?: RealmType;
+  unlockLevel?: number;
+}
+
+// 角色技能状态
+export interface CharacterSkillState {
+  skillId: string;
+  currentCooldown: number;
+}
+
 // 境界枚举
 export type RealmType = 
   | '练气期' 
@@ -187,11 +222,194 @@ export interface BattleLogEntry {
   damage?: number;
 }
 
+// 任务类型
+export type QuestType = 'kill' | 'collect' | 'reach_level' | 'reach_realm' | 'use_item' | 'win_battle';
+
+// 任务定义
+export interface Quest {
+  id: string;
+  name: string;
+  description: string;
+  type: QuestType;
+  target: string;
+  requiredCount: number;
+  rewards: {
+    exp?: number;
+    gold?: number;
+    items?: string[];
+  };
+  requiredRealm?: RealmType;
+  isDaily?: boolean;
+}
+
+// 任务进度
+export interface QuestProgress {
+  questId: string;
+  currentCount: number;
+  completed: boolean;
+  claimed: boolean;
+}
+
+// 成就类型
+export type AchievementType = 'battle' | 'level' | 'collection' | 'exploration' | 'special';
+
+// 成就定义
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: AchievementType;
+  requirement: {
+    type: string;
+    target: number;
+  };
+  rewards: {
+    exp?: number;
+    gold?: number;
+    title?: string;
+  };
+}
+
+// 成就进度
+export interface AchievementProgress {
+  achievementId: string;
+  currentCount: number;
+  completed: boolean;
+  claimed: boolean;
+}
+
+// 随机事件类型
+export type RandomEventType = 'treasure' | 'danger' | 'opportunity' | 'mystery';
+
+// 随机事件定义
+export interface RandomEvent {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: RandomEventType;
+  choices: RandomEventChoice[];
+  minRealm?: RealmType;
+}
+
+// 随机事件选项
+export interface RandomEventChoice {
+  id: string;
+  text: string;
+  requirements?: {
+    minHp?: number;
+    minMp?: number;
+    minGold?: number;
+  };
+  outcomes: RandomEventOutcome[];
+}
+
+// 随机事件结果
+export interface RandomEventOutcome {
+  probability: number;
+  effects: {
+    hp?: number;
+    mp?: number;
+    gold?: number;
+    exp?: number;
+    item?: string;
+    message: string;
+  };
+}
+
+// 副本定义
+export interface Dungeon {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  requiredRealm: RealmType;
+  floors: DungeonFloor[];
+  rewards: {
+    exp: number;
+    gold: number;
+    items: string[];
+  };
+  cooldown: number;
+}
+
+// 副本层数
+export interface DungeonFloor {
+  level: number;
+  monsters: string[];
+  boss?: string;
+}
+
+// 副本进度
+export interface DungeonProgress {
+  dungeonId: string;
+  currentFloor: number;
+  completed: boolean;
+  lastAttempt: number;
+}
+
+// 挂机收益
+export interface IdleReward {
+  lastClaimTime: number;
+  accumulatedExp: number;
+  accumulatedGold: number;
+  maxAccumulationHours: number;
+}
+
+// 每日签到
+export interface DailySignIn {
+  lastSignInDate: string;
+  consecutiveDays: number;
+  totalDays: number;
+  rewards: DailySignInReward[];
+}
+
+// 签到奖励
+export interface DailySignInReward {
+  day: number;
+  rewards: {
+    gold?: number;
+    exp?: number;
+    item?: string;
+    itemQuantity?: number;
+  };
+}
+
+// 作弊码类型
+export type CheatCodeType = 'gold' | 'exp' | 'god_mode' | 'instant_level' | 'full_hp' | 'add_item' | 'tribulation_pill' | 'power_up';
+
+// 作弊码定义
+export interface CheatCode {
+  code: string;
+  name: string;
+  description: string;
+  type: CheatCodeType;
+  params?: Record<string, any>;
+  duration?: number;
+}
+
+// 激活的作弊效果
+export interface ActiveCheatEffect {
+  id: string;
+  type: CheatCodeType;
+  startTime: number;
+  duration: number;
+  params?: Record<string, any>;
+}
+
+// 作弊码结果
+export interface CheatCodeResult {
+  success: boolean;
+  message: string;
+  effect?: ActiveCheatEffect;
+}
+
 // 游戏日志
 export interface GameLogEntry {
   id: string;
   timestamp: number;
-  type: 'battle' | 'level_up' | 'tribulation' | 'item' | 'market' | 'system';
+  type: 'battle' | 'level_up' | 'tribulation' | 'item' | 'market' | 'system' | 'quest' | 'achievement' | 'event';
   message: string;
 }
 
