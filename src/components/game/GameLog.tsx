@@ -14,7 +14,8 @@ import {
   Info,
   Scroll,
   Trophy,
-  Sparkles
+  Sparkles,
+  PawPrint
 } from 'lucide-react';
 
 interface GameLogProps {
@@ -33,6 +34,7 @@ export function GameLog({ logs }: GameLogProps) {
       case 'quest': return <Scroll className="w-4 h-4 text-indigo-500" />;
       case 'achievement': return <Trophy className="w-4 h-4 text-yellow-500" />;
       case 'event': return <Sparkles className="w-4 h-4 text-pink-500" />;
+      case 'pet': return <PawPrint className="w-4 h-4 text-green-500" />;
     }
   };
 
@@ -47,6 +49,7 @@ export function GameLog({ logs }: GameLogProps) {
       case 'quest': return 'text-indigo-600';
       case 'achievement': return 'text-yellow-600';
       case 'event': return 'text-pink-600';
+      case 'pet': return 'text-green-600';
     }
   };
 
@@ -60,7 +63,8 @@ export function GameLog({ logs }: GameLogProps) {
       system: '系统',
       quest: '任务',
       achievement: '成就',
-      event: '事件'
+      event: '事件',
+      pet: '宠物'
     };
     return names[type];
   };

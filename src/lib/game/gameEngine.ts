@@ -15,7 +15,9 @@ import {
   calculateExpToNext,
   calculateBaseStats,
   PillItem,
-  TribulationPillItem
+  TribulationPillItem,
+  PlayerPet,
+  PetSkill
 } from '@/types/game';
 import { getItemById } from './gameData';
 
@@ -52,10 +54,33 @@ export function createNewCharacter(name: string): Character {
     },
     tribulationPills: 3,  // 初始赠送3颗渡劫丹
     permanentBonuses: {
-      maxHp: 0,
-      maxMp: 0
-    }
-  };
+    maxHp: 0,
+    maxMp: 0
+  },
+  
+  // 宠物系统
+  pets: []
+};
+}
+
+// 计算宠物属性加成
+export function calculatePetBonus(character: Character): { hp: number; mp: number; atk: number; def: number } {
+  let bonusHp = 0;
+  let bonusMp = 0;
+  let bonusAtk = 0;
+  let bonusDef = 0;
+  
+  // 只计算激活状态的宠物
+  const activePets = character.pets?.filter(pet => pet.isActive) || [];
+  
+  activePets.forEach(pet => {
+    bonusHp += pet.pet.stats.hp || 0;
+    bonusMp += 0; // 宠物没有MP属性
+    bonusAtk += pet.pet.stats.atk || 0;
+    bonusDef += pet.pet.stats.def || 0;
+  });
+  
+  return { hp: bonusHp, mp: bonusMp, atk: bonusAtk, def: bonusDef };
 }
 
 // 计算装备加成后的属性
@@ -78,6 +103,13 @@ export function calculateStatsWithEquipment(character: Character): CharacterStat
       bonusDef += item.stats.def || 0;
     }
   });
+  
+  // 计算宠物加成
+  const petBonus = calculatePetBonus(character);
+  bonusHp += petBonus.hp;
+  bonusMp += petBonus.mp;
+  bonusAtk += petBonus.atk;
+  bonusDef += petBonus.def;
   
   // 加上永久加成
   const permanentHp = character.permanentBonuses?.maxHp || 0;
@@ -150,6 +182,25 @@ export function executeBattle(
       type: 'player_attack',
       message: `你对${monster.name}造成了${playerDamage}点伤害`,
       damage: playerDamage
+    });
+    
+    if (monsterHp <= 0) break;
+    
+    // 宠物攻击
+    const activePets = character.pets?.filter(pet => pet.isActive) || [];
+    activePets.forEach(pet => {
+      if (monsterHp > 0) {
+        const petAtk = pet.pet.stats.atk || 0;
+        const petDamage = Math.max(1, Math.floor(petAtk * 0.8 * (1 - monster.def / (monster.def + 150))));
+        monsterHp -= petDamage;
+        logs.push({
+          id: generateId(),
+          round,
+          type: 'player_attack',
+          message: `${pet.pet.name}对${monster.name}造成了${petDamage}点伤害`,
+          damage: petDamage
+        });
+      }
     });
     
     if (monsterHp <= 0) break;

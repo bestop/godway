@@ -200,6 +200,9 @@ export interface Character {
     maxHp: number;  // 永久增加的最大气血
     maxMp: number;  // 永久增加的最大灵力
   };
+  
+  // 宠物系统
+  pets: PlayerPet[];
 }
 
 // 战斗状态
@@ -409,7 +412,7 @@ export interface CheatCodeResult {
 export interface GameLogEntry {
   id: string;
   timestamp: number;
-  type: 'battle' | 'level_up' | 'tribulation' | 'item' | 'market' | 'system' | 'quest' | 'achievement' | 'event';
+  type: 'battle' | 'level_up' | 'tribulation' | 'item' | 'market' | 'system' | 'quest' | 'achievement' | 'event' | 'pet';
   message: string;
 }
 
@@ -476,4 +479,125 @@ export function calculateBaseStats(realm: RealmType, level: number): { baseHp: n
     atk: 15 + level * 3 * realmBonus,         // 提高50%基础攻击和成长
     def: 8 + level * 1.5 * realmBonus,        // 提高60%基础防御和成长
   };
+}
+
+// 宠物类型
+export type PetType = 'beast' | 'spirit' | 'elemental' | 'divine' | 'demonic';
+
+// 宠物品质
+export type PetQuality = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+// 宠物技能
+export interface PetSkill {
+  id: string;
+  name: string;
+  description: string;
+  type: 'attack' | 'defense' | 'support' | 'special';
+  power: number;
+  cooldown: number; // 冷却回合
+  effects: {
+    damage?: number;
+    heal?: number;
+    buff?: {
+      stat: 'atk' | 'def' | 'hp' | 'mp';
+      value: number;
+      duration: number;
+    };
+    debuff?: {
+      stat: 'atk' | 'def';
+      value: number;
+      duration: number;
+    };
+  };
+}
+
+// 宠物
+export interface Pet {
+  id: string;
+  name: string;
+  type: PetType;
+  quality: PetQuality;
+  level: number;
+  exp: number;
+  maxExp: number;
+  rarity: number; // 稀有度 0-1
+  stats: {
+    hp: number;
+    atk: number;
+    def: number;
+    speed: number; // 速度，影响出手顺序
+  };
+  skills: PetSkill[];
+  loyalty: number; // 忠诚度 0-100
+  affection: number; // 亲密度 0-100
+  icon: string;
+  description: string;
+  obtainedAt: number; // 获得时间戳
+  evolvedFrom?: string; // 进化前的宠物ID
+  canEvolve: boolean; // 是否可进化
+  evolutionLevel?: number; // 进化所需等级
+  evolutionPet?: string; // 进化后的宠物ID
+}
+
+// 玩家宠物
+export interface PlayerPet {
+  pet: Pet;
+  isActive: boolean; // 是否出战
+  nickname?: string; // 昵称
+  battleCount: number; // 战斗次数
+  winCount: number; // 胜利次数
+  skillsLearned: string[]; // 已学习的技能ID
+}
+
+// 宠物商店物品
+export interface PetShopItem {
+  id: string;
+  petId: string;
+  price: number;
+  stock: number;
+  rarity: PetQuality;
+  type: PetType;
+}
+
+// 宠物战斗结果
+export interface PetBattleResult {
+  success: boolean;
+  message: string;
+  petExp: number;
+  playerExp: number;
+  gold: number;
+  items: GameItem[];
+}
+
+// 宠物配置
+export interface PetConfig {
+  baseStats: {
+    hp: number;
+    atk: number;
+    def: number;
+    speed: number;
+  };
+  growthRate: {
+    hp: number;
+    atk: number;
+    def: number;
+    speed: number;
+  };
+  skills: PetSkill[];
+  evolutionPath?: {
+    level: number;
+    petId: string;
+  };
+}
+
+// 宠物数据
+export interface PetData {
+  id: string;
+  name: string;
+  type: PetType;
+  quality: PetQuality;
+  rarity: number;
+  icon: string;
+  description: string;
+  config: PetConfig;
 }

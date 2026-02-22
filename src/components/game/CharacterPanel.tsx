@@ -30,8 +30,11 @@ export function CharacterPanel({ character, inventory, onRestore, onMeditate }: 
   
   // 计算回血丹数量
   const hpPills = inventory.filter(i => 
-    i.item.type === 'pill' && (i.item as any).effect === 'hp'
-  ).reduce((sum, i) => sum + i.quantity, 0);
+    i && i.item && i.item.type === 'pill' && (i.item as any).effect === 'hp'
+  ).reduce((sum, i) => sum + (i.quantity || 0), 0);
+  
+  // 渡劫丹数量（从角色属性中获取，因为使用后会转移到角色身上）
+  const tribulationPillsInBag = character.tribulationPills;
   
   // 境界颜色
   const getRealmColor = () => {
@@ -202,7 +205,7 @@ export function CharacterPanel({ character, inventory, onRestore, onMeditate }: 
               💊 回血丹: <span className="font-bold">{hpPills}</span>
             </div>
             <div className="flex items-center gap-1 text-purple-500">
-              📿 渡劫丹: <span className="font-bold">{character.tribulationPills}</span>
+              📿 渡劫丹: <span className="font-bold">{tribulationPillsInBag}</span>
             </div>
           </div>
         </div>

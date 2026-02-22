@@ -16,6 +16,8 @@ import { RandomEventModal, EventResultModal } from '@/components/game/RandomEven
 import { DailySignInPanel } from '@/components/game/DailySignInPanel';
 import { DungeonPanel } from '@/components/game/DungeonPanel';
 import { CheatCodeDialog } from '@/components/game/CheatCodeDialog';
+import { PetPanel } from '@/components/game/PetPanel';
+import { PetShop } from '@/components/game/PetShop';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +34,9 @@ import {
   Trophy,
   Calendar,
   Castle,
-  Terminal
+  Terminal,
+  PawPrint,
+  ShoppingBag
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -104,7 +108,13 @@ export default function Home() {
     buyNpcItem,
     doMeditate,
     doTribulation,
-    restore
+    restore,
+    buyPet,
+    activatePet,
+    deactivatePet,
+    renamePet,
+    evolvePet,
+    levelUpPet
   } = useGameState();
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -183,6 +193,18 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('xiuxian_cheat_effects', JSON.stringify(activeCheatEffects));
   }, [activeCheatEffects]);
+
+  // 监听气血恢复事件
+  useEffect(() => {
+    const handleRestoreHp = () => {
+      doMeditate();
+    };
+
+    window.addEventListener('restoreHp', handleRestoreHp);
+    return () => {
+      window.removeEventListener('restoreHp', handleRestoreHp);
+    };
+  }, [doMeditate]);
 
   const handleReward = useCallback((exp: number, gold: number, items: string[]) => {
     if (!character) return;
@@ -468,6 +490,14 @@ export default function Home() {
                   <Zap className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">渡劫</span>
                 </TabsTrigger>
+                <TabsTrigger value="pet" className="text-xs sm:text-sm data-[state=active]:bg-green-100 data-[state=active]:text-green-700 py-2">
+                  <PawPrint className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">宠物</span>
+                </TabsTrigger>
+                <TabsTrigger value="petshop" className="text-xs sm:text-sm data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 py-2">
+                  <ShoppingBag className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">宠物商店</span>
+                </TabsTrigger>
                 <TabsTrigger value="daily" className="text-xs sm:text-sm data-[state=active]:bg-green-100 data-[state=active]:text-green-700 py-2">
                   <Calendar className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">签到</span>
@@ -561,6 +591,26 @@ export default function Home() {
                       }));
                     }
                   }}
+                />
+              </TabsContent>
+
+              <TabsContent value="pet" className="mt-4">
+                <PetPanel
+                  character={character}
+                  onActivatePet={activatePet}
+                  onDeactivatePet={deactivatePet}
+                  onRenamePet={renamePet}
+                  onEvolvePet={evolvePet}
+                  onLevelUpPet={levelUpPet}
+                  addLog={addLog}
+                />
+              </TabsContent>
+
+              <TabsContent value="petshop" className="mt-4">
+                <PetShop
+                  character={character}
+                  onBuyPet={buyPet}
+                  addLog={addLog}
                 />
               </TabsContent>
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Character, Monster, GameLogEntry } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { getMonstersByRealm, getRecommendedMonster } from '@/lib/game/gameData';
 import { 
   Map as MapIcon, 
@@ -20,7 +21,8 @@ import {
   Zap,
   Star,
   Compass,
-  Wand2
+  Wand2,
+  ArrowLeft
 } from 'lucide-react';
 
 // 地图区域定义
@@ -348,6 +350,21 @@ export function MapArea({ character, onEncounter, addLog }: MapAreaProps) {
           {particles.map(p => (
             <Particle key={p.id} color={p.color} delay={p.delay} duration={p.duration} />
           ))}
+          
+          {/* 返回按钮 - 随时可以取消探索 */}
+          <Button
+            onClick={() => {
+              setIsMoving(false);
+              setSelectedRegion(null);
+              setExploreProgress(0);
+              setParticles([]);
+            }}
+            className="absolute top-4 right-4 bg-slate-700 hover:bg-slate-800 text-white z-10"
+            size="sm"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            返回
+          </Button>
           
           <div className="text-center relative z-10">
             {/* 目的地动画 */}
@@ -695,7 +712,15 @@ export function MapArea({ character, onEncounter, addLog }: MapAreaProps) {
                     ${isSelected ? 'ring-4 ring-amber-400 ring-offset-2 scale-105' : ''}
                     ${isMoving && !isSelected ? 'opacity-50 pointer-events-none' : ''}
                   `}
-                  onClick={(e) => exploreRegion(region, e)}
+                  onClick={(e) => {
+                    if (character.stats.hp <= 0) {
+                      addLog('battle', '气血不足，无法探索！');
+                      return;
+                    }
+                    if (!isMoving) {
+                      exploreRegion(region, e);
+                    }
+                  }}
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   {/* 悬停光效 */}
@@ -736,6 +761,25 @@ export function MapArea({ character, onEncounter, addLog }: MapAreaProps) {
             <AlertTriangle className="w-10 h-10 mx-auto mb-2 animate-bounce" />
             <p className="font-bold text-lg">气血耗尽，无法探索！</p>
             <p className="text-sm text-red-500 mt-1">请先恢复气血</p>
+            <div className="mt-4 space-y-2">
+              <Button 
+                className="bg-red-500 hover:bg-red-600 text-white"
+                onClick={() => window.location.href = '/'}
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                返回主页
+              </Button>
+              <Button 
+                className="bg-green-500 hover:bg-green-600 text-white"
+                onClick={() => {
+                  // 触发修炼恢复
+                  window.dispatchEvent(new CustomEvent('restoreHp'));
+                }}
+              >
+                <Wand2 className="w-4 h-4 mr-1" />
+                修炼恢复
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

@@ -9,6 +9,7 @@ import {
   GameItem,
   Monster,
   MarketListing,
+  PlayerPet
 } from '@/types/game';
 import {
   createNewCharacter,
@@ -39,8 +40,14 @@ import {
   clearAllData,
 } from '@/lib/game/storage';
 import { getRecommendedMonster, getItemById } from '@/lib/game/gameData';
+import {
+  getPetById,
+  createPlayerPet,
+  levelUpPet as levelUpPetUtil,
+  evolvePet as evolvePetUtil
+} from '@/lib/game/petData';
 
-export type GameTab = 'battle' | 'cultivation' | 'tribulation' | 'inventory' | 'market' | 'map' | 'quest' | 'achievement' | 'dungeon' | 'daily';
+export type GameTab = 'battle' | 'cultivation' | 'tribulation' | 'inventory' | 'market' | 'map' | 'quest' | 'achievement' | 'dungeon' | 'daily' | 'pet' | 'petshop';
 
 interface UseGameStateReturn {
   // 状态
@@ -79,6 +86,14 @@ interface UseGameStateReturn {
   doMeditate: () => void;
   doTribulation: () => { success: boolean; message: string };
   restore: () => void;
+  
+  // 宠物相关
+  buyPet: (petId: string, price: number) => void;
+  activatePet: (petId: string) => void;
+  deactivatePet: (petId: string) => void;
+  renamePet: (petId: string, nickname: string) => void;
+  evolvePet: (petId: string) => void;
+  levelUpPet: (petId: string, exp: number) => void;
 }
 
 // 惰性初始化函数
@@ -511,6 +526,145 @@ export function useGameState(): UseGameStateReturn {
     addLog('item', `使用${bestPill.item.name}恢复了${actualHeal}点气血`);
   }, [character, inventory, addLog]);
 
+  // 宠物相关方法
+  const buyPet = useCallback((petId: string, price: number) => {
+    if (!character) return;
+    
+    const petData = getPetById(petId);
+    if (!petData) return;
+    
+    if (character.gold < price) {
+      addLog('pet', '金币不足，无法购买宠物！');
+      return;
+    }
+    
+    const newPet = createPlayerPet(petData);
+    const updatedCharacter = {
+      ...character,
+      gold: character.gold - price,
+      pets: [...(character.pets || []), newPet]
+    };
+    
+    setCharacter(updatedCharacter);
+    addLog('pet', `购买了宠物：${petData.name}`);
+  }, [character, addLog]);
+
+  const activatePet = useCallback((petId: string) => {
+    if (!character) return;
+    
+    const updatedPets = (character.pets || []).map(pet => ({
+      ...pet,
+      isActive: pet.pet.id === petId
+    }));
+    
+    const updatedCharacter = {
+      ...character,
+      pets: updatedPets
+    };
+    
+    setCharacter(updatedCharacter);
+    addLog('pet', `宠物 ${updatedPets.find(p => p.pet.id === petId)?.pet.name} 已出战！`);
+  }, [character, addLog]);
+
+  const deactivatePet = useCallback((petId: string) => {
+    if (!character) return;
+    
+    const updatedPets = (character.pets || []).map(pet => ({
+      ...pet,
+      isActive: false
+    }));
+    
+    const updatedCharacter = {
+      ...character,
+      pets: updatedPets
+    };
+    
+    setCharacter(updatedCharacter);
+    addLog('pet', '宠物已休息');
+  }, [character, addLog]);
+
+  const renamePet = useCallback((petId: string, nickname: string) => {
+    if (!character) return;
+    
+    const updatedPets = (character.pets || []).map(pet => {
+      if (pet.pet.id === petId) {
+        return {
+          ...pet,
+          nickname
+        };
+      }
+      return pet;
+    });
+    
+    const updatedCharacter = {
+      ...character,
+      pets: updatedPets
+    };
+    
+    setCharacter(updatedCharacter);
+    addLog('pet', `宠物已重命名为：${nickname}`);
+  }, [character, addLog]);
+
+  const evolvePet = useCallback((petId: string) => {
+    if (!character) return;
+    
+    const petIndex = (character.pets || []).findIndex(p => p.pet.id === petId);
+    if (petIndex === -1) return;
+    
+    const pet = (character.pets || [])[petIndex];
+    const evolvedPet = evolvePetUtil(pet.pet);
+    
+    if (!evolvedPet) {
+      addLog('pet', '宠物无法进化');
+      return;
+    }
+    
+    const updatedPets = [...(character.pets || [])];
+    updatedPets[petIndex] = {
+      ...pet,
+      pet: evolvedPet
+    };
+    
+    const updatedCharacter = {
+      ...character,
+      pets: updatedPets
+    };
+    
+    setCharacter(updatedCharacter);
+    addLog('pet', `宠物进化为：${evolvedPet.name}`);
+  }, [character, addLog]);
+
+  const levelUpPet = useCallback((petId: string, exp: number) => {
+    if (!character) return;
+    
+    const petIndex = (character.pets || []).findIndex(p => p.pet.id === petId);
+    if (petIndex === -1) return;
+    
+    const pet = (character.pets || [])[petIndex];
+    let updatedPet = { ...pet.pet };
+    
+    updatedPet.exp += exp;
+    
+    // 检查升级
+    while (updatedPet.exp >= updatedPet.maxExp) {
+      updatedPet = levelUpPetUtil(updatedPet);
+      addLog('pet', `宠物 ${updatedPet.name} 升级了！`);
+    }
+    
+    const updatedPets = [...(character.pets || [])];
+    updatedPets[petIndex] = {
+      ...pet,
+      pet: updatedPet
+    };
+    
+    const updatedCharacter = {
+      ...character,
+      pets: updatedPets
+    };
+    
+    setCharacter(updatedCharacter);
+  }, [character, addLog]);
+
   return {
     character,
     inventory,
@@ -538,6 +692,12 @@ export function useGameState(): UseGameStateReturn {
     buyNpcItem,
     doMeditate,
     doTribulation,
-    restore
+    restore,
+    buyPet,
+    activatePet,
+    deactivatePet,
+    renamePet,
+    evolvePet,
+    levelUpPet
   };
 }
