@@ -24,7 +24,7 @@ import {
 interface InventoryProps {
   character: Character;
   inventory: InventoryItem[];
-  onUseItem: (item: GameItem) => void;
+  onUseItem: (item: GameItem, quantity?: number) => void;
   onEquip: (item: GameItem) => void;
   onUnequip: (slot: 'weapon' | 'armor' | 'accessory') => void;
   onSellItem: (item: GameItem, price: number) => void;
@@ -41,6 +41,7 @@ export function Inventory({
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
   const [sellPrice, setSellPrice] = useState('100');
+  const [useQuantity, setUseQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('all');
 
   // 分类物品
@@ -53,8 +54,9 @@ export function Inventory({
 
   const handleUse = () => {
     if (selectedItem) {
-      onUseItem(selectedItem.item);
+      onUseItem(selectedItem.item, useQuantity);
       setSelectedItem(null);
+      setUseQuantity(1);
     }
   };
 
@@ -72,6 +74,13 @@ export function Inventory({
       setSellDialogOpen(false);
       setSellPrice('100');
     }
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedItem) return;
+    const value = parseInt(e.target.value) || 1;
+    const clampedValue = Math.min(Math.max(1, value), selectedItem.quantity);
+    setUseQuantity(clampedValue);
   };
 
   const getItemQualityColor = (item: GameItem) => {
@@ -248,44 +257,64 @@ export function Inventory({
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2 mt-3">
+              <div className="mt-3">
                 {(selectedItem.item.type === 'pill' || selectedItem.item.type === 'tribulation_pill') && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <Label htmlFor="useQuantity" className="text-sm text-slate-600">使用数量:</Label>
+                    <Input 
+                      id="useQuantity" 
+                      type="number"
+                      min={1}
+                      max={selectedItem.quantity}
+                      value={useQuantity}
+                      onChange={handleQuantityChange}
+                      className="w-20 bg-white border-slate-300"
+                    />
+                    <span className="text-sm text-slate-500">/ {selectedItem.quantity}</span>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  {(selectedItem.item.type === 'pill' || selectedItem.item.type === 'tribulation_pill') && (
+                    <Button 
+                      size="sm" 
+                      onClick={handleUse}
+                      className="bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      <Pill className="w-4 h-4 mr-1" />
+                      使用
+                    </Button>
+                  )}
+                  {selectedItem.item.type === 'equipment' && (
+                    <Button 
+                      size="sm" 
+                      onClick={handleEquip}
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Sword className="w-4 h-4 mr-1" />
+                      装备
+                    </Button>
+                  )}
                   <Button 
                     size="sm" 
-                    onClick={handleUse}
-                    className="bg-green-500 hover:bg-green-600 text-white"
+                    variant="outline"
+                    onClick={() => setSellDialogOpen(true)}
+                    className="border-amber-300 text-amber-600 hover:bg-amber-50"
                   >
-                    <Pill className="w-4 h-4 mr-1" />
-                    使用
+                    <Coins className="w-4 h-4 mr-1" />
+                    出售
                   </Button>
-                )}
-                {selectedItem.item.type === 'equipment' && (
                   <Button 
                     size="sm" 
-                    onClick={handleEquip}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
+                    variant="ghost"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      setUseQuantity(1);
+                    }}
+                    className="text-slate-500"
                   >
-                    <Sword className="w-4 h-4 mr-1" />
-                    装备
+                    取消
                   </Button>
-                )}
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => setSellDialogOpen(true)}
-                  className="border-amber-300 text-amber-600 hover:bg-amber-50"
-                >
-                  <Coins className="w-4 h-4 mr-1" />
-                  出售
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={() => setSelectedItem(null)}
-                  className="text-slate-500"
-                >
-                  取消
-                </Button>
+                </div>
               </div>
             </div>
           )}

@@ -28,6 +28,11 @@ import {
   calculateStatsWithEquipment,
 } from '@/lib/game/gameEngine';
 import {
+  SKILLS,
+  getSamsaraRequirement,
+  getSamsaraBonuses
+} from '@/types/game';
+import {
   saveCharacter,
   loadCharacter,
   saveInventory,
@@ -47,7 +52,7 @@ import {
   evolvePet as evolvePetUtil
 } from '@/lib/game/petData';
 
-export type GameTab = 'battle' | 'cultivation' | 'tribulation' | 'inventory' | 'market' | 'map' | 'quest' | 'achievement' | 'dungeon' | 'daily' | 'pet' | 'petshop';
+export type GameTab = 'battle' | 'cultivation' | 'tribulation' | 'inventory' | 'market' | 'map' | 'quest' | 'achievement' | 'dungeon' | 'daily' | 'pet' | 'petshop' | 'skill' | 'samsara';
 
 interface UseGameStateReturn {
   // 状态
@@ -75,7 +80,7 @@ interface UseGameStateReturn {
   mapEncounter: (monster: Monster, isGodMode?: boolean) => void;
   
   // 物品相关
-  useItem: (item: GameItem) => void;
+  useItem: (item: GameItem, quantity?: number) => void;
   equip: (item: GameItem) => void;
   unequip: (slot: 'weapon' | 'armor' | 'accessory') => void;
   sellItem: (item: GameItem, price: number) => void;
@@ -94,6 +99,13 @@ interface UseGameStateReturn {
   renamePet: (petId: string, nickname: string) => void;
   evolvePet: (petId: string) => void;
   levelUpPet: (petId: string, exp: number) => void;
+  
+  // 技能系统
+  unlockSkill: (skillId: string) => void;
+  useSkill: (skillId: string) => void;
+  
+  // 轮回系统
+  doSamsara: () => void;
 }
 
 // 惰性初始化函数
@@ -462,10 +474,10 @@ export function useGameState(): UseGameStateReturn {
   }, []);
 
   // 使用物品
-  const useItem = useCallback((item: GameItem) => {
+  const useItem = useCallback((item: GameItem, quantity: number = 1) => {
     if (!character) return;
     
-    const { character: updatedCharacter, inventory: updatedInventory, message } = applyItem(character, item, inventory);
+    const { character: updatedCharacter, inventory: updatedInventory, message } = applyItem(character, item, inventory, quantity);
     setCharacter(updatedCharacter);
     setInventory(updatedInventory);
     addLog('item', message);
@@ -753,6 +765,81 @@ export function useGameState(): UseGameStateReturn {
     
     setCharacter(updatedCharacter);
   }, [character, addLog]);
+  
+  // 解锁技能
+  const unlockSkill = useCallback((skillId: string) => {
+    if (!character) return;
+    
+    const skill = SKILLS.find(s => s.id === skillId);
+    if (!skill) return;
+    
+    let updatedSkills = [...(character.skills || [])];
+    
+    // 检查技能是否已存在
+    const skillIndex = updatedSkills.findIndex(s => s.skillId === skillId);
+    
+    if (skillIndex >= 0) {
+      // 更新现有技能
+      updatedSkills[skillIndex] = {
+        ...updatedSkills[skillIndex],
+        unlocked: true
+      };
+    } else {
+      // 添加新技能（处理旧存档）
+      updatedSkills.push({
+        skillId: skillId,
+        level: 1,
+        unlocked: true,
+        currentCooldown: 0
+      });
+    }
+    
+    const updatedCharacter = {
+      ...character,
+      skills: updatedSkills
+    };
+    
+    setCharacter(updatedCharacter);
+    addLog('system', `解锁了技能：${skill.name}！`);
+  }, [character, addLog]);
+  
+  // 使用技能
+  const useSkill = useCallback((skillId: string) => {
+    if (!character) return;
+    
+    const skill = SKILLS.find(s => s.id === skillId);
+    if (!skill) return;
+    
+    addLog('system', `使用了技能：${skill.name}`);
+  }, [character, addLog]);
+  
+  // 执行轮回
+  const doSamsara = useCallback(() => {
+    if (!character) return;
+    
+    const currentCycle = character.samsara?.currentCycle || 0;
+    const nextCycle = currentCycle + 1;
+    
+    // 重置角色，但保留轮回加成
+    const newCharacter = createNewCharacter(character.name);
+    
+    // 设置新的轮回状态
+    newCharacter.samsara = {
+      currentCycle: nextCycle,
+      totalCycles: (character.samsara?.totalCycles || 0) + 1,
+      cycleBonuses: getSamsaraBonuses(nextCycle),
+      cycleRequirements: {
+        exp: getSamsaraRequirement(nextCycle)
+      },
+      canSamsara: false
+    };
+    
+    // 保持总累计经验为0（重新开始）
+    newCharacter.totalExp = 0;
+    
+    setCharacter(newCharacter);
+    addLog('system', `🎊 恭喜！完成第 ${nextCycle} 次轮回！获得永久属性加成！`);
+  }, [character, addLog]);
 
   return {
     character,
@@ -787,6 +874,9 @@ export function useGameState(): UseGameStateReturn {
     deactivatePet,
     renamePet,
     evolvePet,
-    levelUpPet
+    levelUpPet,
+    unlockSkill,
+    useSkill,
+    doSamsara
   };
 }

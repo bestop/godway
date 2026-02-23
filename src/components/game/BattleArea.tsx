@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Character, Monster, GameLogEntry } from '@/types/game';
+import { Character, Monster, GameLogEntry, Skill, SKILLS } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,11 @@ import {
   SwordsIcon,
   Heart,
   Shield,
-  Star
+  Star,
+  Flame,
+  Droplets,
+  Wind,
+  Lightning
 } from 'lucide-react';
 
 interface BattleAreaProps {
@@ -25,7 +29,13 @@ interface BattleAreaProps {
   onQuickBattle: () => void;
   addLog: (type: GameLogEntry['type'], message: string) => void;
   isGodMode?: boolean;
+  setCharacter?: (character: Character) => void;
+  setInventory?: (inventory: any[]) => void;
+  inventory?: any[];
 }
+
+// 技能动画类型
+type SkillAnimationType = 'fire' | 'heal' | 'lightning' | 'shield' | 'powerup' | 'ultimate';
 
 // 战斗回合数据
 interface BattleRound {
@@ -35,16 +45,17 @@ interface BattleRound {
   monsterHp: number;
 }
 
-export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGodMode = false }: BattleAreaProps) {
+export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGodMode = false, setCharacter }: BattleAreaProps) {
   const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
   const [isBattling, setIsBattling] = useState(false);
   const [battleResult, setBattleResult] = useState<'win' | 'lose' | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [battleCount, setBattleCount] = useState(0);
   const [isQuickBattle, setIsQuickBattle] = useState(false);
+  const [playerCurrentMp, setPlayerCurrentMp] = useState(0);
   
   // 战斗动画状态（仅用于挑战战斗）
-  const [battlePhase, setBattlePhase] = useState<'idle' | 'player_attack' | 'monster_attack' | 'damage' | 'result'>('idle');
+  const [battlePhase, setBattlePhase] = useState<'idle' | 'player_turn' | 'player_attack' | 'monster_attack' | 'skill' | 'damage' | 'result'>('idle');
   const [currentRound, setCurrentRound] = useState(0);
   const [playerCurrentHp, setPlayerCurrentHp] = useState(0);
   const [monsterCurrentHp, setMonsterCurrentHp] = useState(0);
@@ -57,8 +68,267 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
   const [petAttackEffect, setPetAttackEffect] = useState(false);
   const [petDamageText, setPetDamageText] = useState(0);
   
+  // 技能相关状态
+  const [currentSkill, setCurrentSkill] = useState<Skill | null>(null);
+  const [skillAnimation, setSkillAnimation] = useState<SkillAnimationType | null>(null);
+  const [showSkillEffect, setShowSkillEffect] = useState(false);
+  const [skillDamageText, setSkillDamageText] = useState(0);
+  const [isWaitingForSkill, setIsWaitingForSkill] = useState(false);
+  const [hasAttackedThisRound, setHasAttackedThisRound] = useState(false);
+  
+  // 获取可用技能
+  const getAvailableSkills = useCallback((): Skill[] => {
+    if (!character.skills) return [];
+    
+    return SKILLS.filter(skill => {
+      const charSkill = character.skills.find(s => s.skillId === skill.id);
+      return charSkill?.unlocked === true;
+    });
+  }, [character.skills]);
+  
   const monsters = getMonstersByRealm(character.realm);
   const maxMonsterHp = selectedMonster?.hp || 1;
+  const availableSkills = getAvailableSkills();
+  
+  // 怪物攻击
+  const monsterAttack = useCallback(() => {
+    if (!selectedMonster) return;
+    
+    setBattlePhase('monster_attack');
+    const monsterDamage = isGodMode ? 0 : Math.max(1, Math.floor(selectedMonster.atk * (1 - character.stats.def / (character.stats.def + 100))));
+    
+    setShowImpactEffect(true);
+    setDamageText(prev => ({...prev, player: monsterDamage}));
+    
+    setTimeout(() => {
+      setPlayerCurrentHp(prev => {
+        const newHp = Math.max(0, prev - monsterDamage);
+        if (newHp <= 0) {
+          // 战败时更新 character 的气血
+          if (setCharacter) {
+            setCharacter({
+              ...character,
+              stats: {
+                ...character.stats,
+                hp: 0
+              }
+            });
+          }
+          setTimeout(() => {
+            setBattleResult('lose');
+            setBattlePhase('result');
+            setShowResult(true);
+            setTimeout(() => {
+              setIsBattling(false);
+              setBattlePhase('idle');
+              setTimeout(() => setShowResult(false), 150);
+            }, 500);
+          }, 200);
+        }
+        return newHp;
+      });
+      setPlayerShake(true);
+      
+      setTimeout(() => {
+        setShowImpactEffect(false);
+        setPlayerShake(false);
+        
+        // 进入下一回合
+        setTimeout(() => {
+          if (playerCurrentHp - monsterDamage > 0) {
+            setCurrentRound(prev => prev + 1);
+            setHasAttackedThisRound(false);
+            setBattlePhase('player_turn');
+          }
+        }, 100);
+      }, 150);
+    }, 200);
+  }, [selectedMonster, character, isGodMode, playerCurrentHp, setCharacter]);
+  
+  // 普通攻击
+  const handleNormalAttack = useCallback(() => {
+    if (!isBattling || hasAttackedThisRound || battlePhase !== 'player_turn') return;
+    
+    setHasAttackedThisRound(true);
+    setBattlePhase('player_attack');
+    
+    // 伤害倍数
+    const damageMultiplier = 10;
+    
+    // 计算伤害
+    const playerAtk = character.stats.atk;
+    const playerDef = character.stats.def;
+    const monsterDef = selectedMonster?.def || 0;
+    
+    // 获取激活的宠物
+    const activePets = (character.pets || []).filter(pet => pet.isActive);
+    
+    // 玩家攻击
+    const playerDamage = Math.max(1, Math.floor(playerAtk * (1 - monsterDef / (monsterDef + 100)) * damageMultiplier));
+    let totalPlayerDamage = playerDamage;
+    
+    // 宠物攻击
+    activePets.forEach(pet => {
+      const petAtk = pet.pet.stats.atk || 0;
+      const petDamage = Math.max(1, Math.floor(petAtk * 0.8 * (1 - monsterDef / (monsterDef + 150)) * damageMultiplier));
+      totalPlayerDamage += petDamage;
+      setPetDamageText(petDamage);
+    });
+    
+    setShowSlashEffect(true);
+    setDamageText(prev => ({...prev, monster: totalPlayerDamage}));
+    
+    setTimeout(() => {
+      setMonsterCurrentHp(prev => {
+        const newHp = Math.max(0, prev - totalPlayerDamage);
+        if (newHp <= 0) {
+          setTimeout(() => {
+            setBattleResult('win');
+            setBattlePhase('result');
+            setShowResult(true);
+            setTimeout(() => {
+              setIsBattling(false);
+              setBattlePhase('idle');
+              onQuickBattle();
+              setTimeout(() => setShowResult(false), 150);
+            }, 500);
+          }, 200);
+        }
+        return newHp;
+      });
+      setMonsterShake(true);
+      
+      // 宠物攻击动画
+      if (activePets.length > 0) {
+        setPetAttackEffect(true);
+        setTimeout(() => setPetAttackEffect(false), 30);
+      }
+      
+      setTimeout(() => {
+        setShowSlashEffect(false);
+        setMonsterShake(false);
+        
+        // 检查怪物是否死亡
+        if (monsterCurrentHp - totalPlayerDamage <= 0) {
+          return;
+        }
+        
+        // 怪物攻击
+        setTimeout(() => {
+          monsterAttack();
+        }, 200);
+      }, 200);
+    }, 300);
+  }, [isBattling, hasAttackedThisRound, battlePhase, character, selectedMonster, monsterCurrentHp, onQuickBattle, addLog, monsterAttack]);
+  
+  // 使用技能
+  const handleUseSkill = useCallback((skill: Skill) => {
+    if (!isBattling || battlePhase !== 'player_turn') return;
+    if (playerCurrentMp < skill.mpCost) {
+      addLog('battle', '灵力不足，无法使用技能！');
+      return;
+    }
+    
+    setIsWaitingForSkill(true);
+    setCurrentSkill(skill);
+    
+    // 确定技能动画类型
+    let animType: SkillAnimationType = 'fire';
+    switch (skill.id) {
+      case 'skill_fireball':
+        animType = 'fire';
+        break;
+      case 'skill_heal':
+        animType = 'heal';
+        break;
+      case 'skill_powerup':
+        animType = 'powerup';
+        break;
+      case 'skill_lightning':
+        animType = 'lightning';
+        break;
+      case 'skill_shield':
+        animType = 'shield';
+        break;
+      case 'skill_ultimate':
+        animType = 'ultimate';
+        break;
+    }
+    
+    setSkillAnimation(animType);
+    setShowSkillEffect(true);
+    setBattlePhase('skill');
+    
+    // 消耗灵力
+    setPlayerCurrentMp(prev => Math.max(0, prev - skill.mpCost));
+    
+    // 计算技能效果
+    const skillDamage = skill.effect.damageMultiplier 
+      ? Math.floor(character.stats.atk * skill.effect.damageMultiplier)
+      : skill.effect.damage || 0;
+      
+    setSkillDamageText(skillDamage);
+    
+    // 播放技能动画
+    setTimeout(() => {
+      if (skill.type === 'attack' || skill.type === 'special') {
+        setMonsterCurrentHp(prev => {
+          const newHp = Math.max(0, prev - skillDamage);
+          if (newHp <= 0) {
+            setTimeout(() => {
+              setBattleResult('win');
+              setBattlePhase('result');
+              setShowResult(true);
+              setTimeout(() => {
+                setIsBattling(false);
+                setBattlePhase('idle');
+                onQuickBattle();
+                setTimeout(() => setShowResult(false), 150);
+              }, 500);
+            }, 200);
+          }
+          return newHp;
+        });
+        setMonsterShake(true);
+      } else if (skill.type === 'heal') {
+        const healAmount = skill.effect.healMultiplier 
+          ? Math.floor(character.stats.maxHp * skill.effect.healMultiplier)
+          : skill.effect.heal || 0;
+        setPlayerCurrentHp(prev => {
+          const newHp = Math.min(character.stats.maxHp, prev + healAmount);
+          // 治疗时同步更新 character 的气血
+          if (setCharacter) {
+            setCharacter({
+              ...character,
+              stats: {
+                ...character.stats,
+                hp: newHp
+              }
+            });
+          }
+          return newHp;
+        });
+      }
+      
+      setTimeout(() => {
+        setShowSkillEffect(false);
+        setMonsterShake(false);
+        setSkillAnimation(null);
+        setCurrentSkill(null);
+        setIsWaitingForSkill(false);
+        
+        // 检查怪物是否死亡
+        if (skill.type === 'attack' || skill.type === 'special') {
+          if (monsterCurrentHp - skillDamage <= 0) {
+            return;
+          }
+        }
+        
+        // 回到玩家回合，可以继续使用技能或攻击
+        setBattlePhase('player_turn');
+      }, 300);
+    }, 500);
+  }, [isBattling, battlePhase, playerCurrentMp, character, selectedMonster, monsterCurrentHp, onQuickBattle, addLog, setCharacter]);
   
   // 模拟战斗回合 - 超快速版，增加伤害倍数
   const simulateBattle = useCallback((monster: Monster) => {
@@ -132,18 +402,18 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
     return rounds;
   }, [character, isGodMode]);
   
-  // 执行战斗动画序列（极速版）
+  // 只在快速战斗时自动执行
   useEffect(() => {
-    if (isQuickBattle || !isBattling || !selectedMonster) return;
+    if (!isQuickBattle || !isBattling || !selectedMonster) return;
     
     const rounds = simulateBattle(selectedMonster);
     setCurrentRound(0);
     setPlayerCurrentHp(character.stats.hp);
+    setPlayerCurrentMp(character.stats.mp);
     setMonsterCurrentHp(selectedMonster.hp);
     setComboCount(0);
     setDamageText({player: 0, monster: 0});
     
-    // 极速速度 - 几乎消除所有延迟
     let roundIndex = 0;
     
     const executeRound = () => {
@@ -158,7 +428,7 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
           setBattlePhase('idle');
           onQuickBattle();
           setTimeout(() => setShowResult(false), 150);
-        }, 50);
+        }, 500);
         return;
       }
       
@@ -166,7 +436,6 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
       setCurrentRound(roundIndex + 1);
       setComboCount(roundIndex + 1);
       
-      // 玩家攻击 - 极快
       setBattlePhase('player_attack');
       setShowSlashEffect(true);
       setDamageText(prev => ({...prev, monster: round.playerDamage}));
@@ -185,7 +454,6 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
             return;
           }
           
-          // 怪物攻击 - 极快
           setBattlePhase('monster_attack');
           setShowImpactEffect(true);
           setDamageText(prev => ({...prev, player: round.monsterDamage}));
@@ -199,7 +467,6 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
               setPlayerShake(false);
               setBattlePhase('damage');
               
-              // 宠物攻击动画 - 极快
               const activePets = (character.pets || []).filter(pet => pet.isActive);
               if (activePets.length > 0) {
                 setPetAttackEffect(true);
@@ -218,7 +485,6 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
       }, 15);
     };
     
-    // 立即开始，无延迟
     const startTimer = setTimeout(executeRound, 0);
     return () => clearTimeout(startTimer);
   }, [isBattling, isQuickBattle, selectedMonster, character, simulateBattle, onQuickBattle]);
@@ -259,7 +525,13 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
     setIsBattling(true);
     setIsQuickBattle(false);
     setBattleResult(null);
-    setBattlePhase('idle');
+    setBattlePhase('player_turn');
+    setCurrentRound(1);
+    setPlayerCurrentHp(character.stats.hp);
+    setPlayerCurrentMp(character.stats.mp);
+    setMonsterCurrentHp(monster.hp);
+    setHasAttackedThisRound(false);
+    setComboCount(0);
     setBattleCount(prev => prev + 1);
   };
 
@@ -396,17 +668,26 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
                   }`}>
                     <span className="text-3xl">🧑‍🦱</span>
                   </div>
-                  {/* 血量条 */}
-                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                  {/* 血量条和灵力条 */}
+                  <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                     <div className="text-center">
                       <div className="text-xs font-bold text-blue-200">{character.name}</div>
+                      {/* 血量条 */}
                       <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden mt-0.5 border border-blue-400/50">
                         <div 
                           className="h-full bg-gradient-to-r from-green-400 to-emerald-300 transition-all duration-100 rounded-full"
                           style={{ width: `${(playerCurrentHp / character.stats.maxHp) * 100}%` }}
                         />
                       </div>
-                      <div className="text-[10px] text-blue-300">{playerCurrentHp}/{character.stats.maxHp}</div>
+                      <div className="text-[10px] text-blue-300">❤️{playerCurrentHp}/{character.stats.maxHp}</div>
+                      {/* 灵力条 */}
+                      <div className="w-20 h-1.5 bg-gray-700 rounded-full overflow-hidden mt-0.5 border border-purple-400/50">
+                        <div 
+                          className="h-full bg-gradient-to-r from-purple-400 to-blue-400 transition-all duration-100 rounded-full"
+                          style={{ width: `${(playerCurrentMp / character.stats.maxMp) * 100}%` }}
+                        />
+                      </div>
+                      <div className="text-[9px] text-purple-300">💫{playerCurrentMp}/{character.stats.maxMp}</div>
                     </div>
                   </div>
                 </div>
@@ -498,6 +779,162 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* 技能动画特效 */}
+              {showSkillEffect && skillAnimation && (
+                <div className="absolute inset-0 flex items-center justify-center z-35 pointer-events-none">
+                  {skillAnimation === 'fire' && (
+                    <div className="relative">
+                      <div className="w-40 h-40 bg-gradient-to-br from-orange-500 via-red-500 to-yellow-400 rounded-full animate-ping" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-6xl">🔥</span>
+                      </div>
+                      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
+                        <div className="bg-black/80 text-orange-300 text-lg font-bold px-3 py-1 rounded-lg">
+                          -{skillDamageText}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {skillAnimation === 'heal' && (
+                    <div className="relative">
+                      <div className="w-32 h-32 bg-gradient-to-br from-green-400 via-emerald-500 to-teal-400 rounded-full animate-pulse" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-5xl">💚</span>
+                      </div>
+                      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
+                        <div className="bg-black/80 text-green-300 text-lg font-bold px-3 py-1 rounded-lg">
+                          +治疗
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {skillAnimation === 'lightning' && (
+                    <div className="relative">
+                      <div className="w-48 h-48 bg-gradient-to-br from-yellow-400 via-blue-500 to-purple-600 rounded-full animate-ping" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-6xl">⚡</span>
+                      </div>
+                      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
+                        <div className="bg-black/80 text-yellow-300 text-lg font-bold px-3 py-1 rounded-lg">
+                          -{skillDamageText}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {skillAnimation === 'shield' && (
+                    <div className="relative">
+                      <div className="w-36 h-36 bg-gradient-to-br from-blue-400 via-cyan-500 to-indigo-500 rounded-full border-4 border-blue-300 animate-pulse" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-5xl">🛡️</span>
+                      </div>
+                      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
+                        <div className="bg-black/80 text-blue-300 text-lg font-bold px-3 py-1 rounded-lg">
+                          防御提升
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {skillAnimation === 'powerup' && (
+                    <div className="relative">
+                      <div className="w-32 h-32 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-full animate-pulse" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-5xl">💪</span>
+                      </div>
+                      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
+                        <div className="bg-black/80 text-orange-300 text-lg font-bold px-3 py-1 rounded-lg">
+                          攻击提升
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {skillAnimation === 'ultimate' && (
+                    <div className="relative">
+                      <div className="w-56 h-56 bg-gradient-to-br from-purple-500 via-pink-500 to-red-600 rounded-full animate-ping" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-7xl">💥</span>
+                      </div>
+                      <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2">
+                        <div className="bg-black/90 text-red-300 text-xl font-black px-4 py-2 rounded-xl">
+                          -{skillDamageText}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+          
+          {/* 技能选择栏 */}
+          <CardContent className="p-4 bg-gradient-to-t from-slate-900 to-slate-800 border-t border-slate-700">
+            <div className="space-y-3">
+              {/* 行动提示 */}
+              {battlePhase === 'player_turn' && (
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-full border border-yellow-500/50">
+                    <span className="animate-pulse">⚔️</span>
+                    <span className="font-bold">选择你的行动！</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* 行动按钮 */}
+              <div className="flex gap-2">
+                {/* 普通攻击按钮 */}
+                <Button
+                  onClick={handleNormalAttack}
+                  disabled={battlePhase !== 'player_turn' || hasAttackedThisRound}
+                  className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold shadow-lg disabled:opacity-50 transition-all active:scale-95"
+                >
+                  <span className="flex items-center gap-2">
+                    <Swords className="w-5 h-5" />
+                    普通攻击
+                  </span>
+                </Button>
+              </div>
+              
+              {/* 技能按钮 */}
+              {availableSkills.length > 0 && (
+                <div>
+                  <div className="text-sm text-slate-400 mb-2 font-medium">技能</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {availableSkills.map((skill) => {
+                      const canUse = playerCurrentMp >= skill.mpCost && battlePhase === 'player_turn';
+                      return (
+                        <Button
+                          key={skill.id}
+                          onClick={() => handleUseSkill(skill)}
+                          disabled={!canUse}
+                          className={`h-12 text-sm font-bold transition-all active:scale-95 ${
+                            canUse 
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg' 
+                              : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <span className="text-lg">{skill.icon}</span>
+                            <span className="text-[10px] mt-0.5">{skill.name}</span>
+                            <span className="text-[9px] opacity-75">💫{skill.mpCost}</span>
+                          </div>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* 未解锁技能提示 */}
+              {availableSkills.length === 0 && (
+                <div className="text-center text-slate-400 text-sm py-2">
+                  <span className="opacity-60">🔒 暂无可用技能，请先在「技能」页面解锁</span>
                 </div>
               )}
             </div>

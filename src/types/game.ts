@@ -185,6 +185,32 @@ export interface CharacterStats {
   def: number;
 }
 
+// 轮回系统
+export interface SamsaraState {
+  currentCycle: number; // 当前轮回次数
+  totalCycles: number; // 总轮回次数
+  cycleBonuses: {
+    atk: number;
+    def: number;
+    hp: number;
+    mp: number;
+    expRate: number; // 经验获取倍率
+    goldRate: number; // 金币获取倍率
+  };
+  cycleRequirements: {
+    exp: number; // 轮回所需总经验
+  };
+  canSamsara: boolean; // 是否可以轮回
+}
+
+// 角色技能
+export interface CharacterSkill {
+  skillId: string;
+  level: number;
+  unlocked: boolean;
+  currentCooldown: number;
+}
+
 // 角色状态
 export interface Character {
   name: string;
@@ -203,6 +229,15 @@ export interface Character {
   
   // 宠物系统
   pets: PlayerPet[];
+  
+  // 技能系统
+  skills: CharacterSkill[];
+  
+  // 轮回系统
+  samsara: SamsaraState;
+  
+  // 总累计经验（用于轮回）
+  totalExp: number;
 }
 
 // 战斗状态
@@ -600,4 +635,124 @@ export interface PetData {
   icon: string;
   description: string;
   config: PetConfig;
+}
+
+// ==========================================
+// 技能系统数据
+// ==========================================
+
+export const SKILLS: Skill[] = [
+  {
+    id: 'skill_fireball',
+    name: '火球术',
+    description: '发射一颗火球，造成攻击力150%的伤害',
+    icon: '🔥',
+    type: 'attack',
+    target: 'enemy',
+    mpCost: 10,
+    cooldown: 2,
+    effect: {
+      damageMultiplier: 1.5
+    },
+    requiredRealm: '练气期',
+    unlockLevel: 1
+  },
+  {
+    id: 'skill_heal',
+    name: '回春术',
+    description: '恢复自身最大气血20%的血量',
+    icon: '💚',
+    type: 'heal',
+    target: 'self',
+    mpCost: 15,
+    cooldown: 3,
+    effect: {
+      healMultiplier: 0.2
+    },
+    requiredRealm: '练气期',
+    unlockLevel: 3
+  },
+  {
+    id: 'skill_powerup',
+    name: '狂暴',
+    description: '提升自身攻击力50%，持续3回合',
+    icon: '⚡',
+    type: 'buff',
+    target: 'self',
+    mpCost: 20,
+    cooldown: 5,
+    effect: {
+      buffAtk: 0.5,
+      duration: 3
+    },
+    requiredRealm: '筑基期',
+    unlockLevel: 1
+  },
+  {
+    id: 'skill_lightning',
+    name: '雷暴术',
+    description: '召唤雷电，造成攻击力200%的伤害',
+    icon: '⚡',
+    type: 'attack',
+    target: 'enemy',
+    mpCost: 25,
+    cooldown: 3,
+    effect: {
+      damageMultiplier: 2.0
+    },
+    requiredRealm: '金丹期',
+    unlockLevel: 1
+  },
+  {
+    id: 'skill_shield',
+    name: '金钟罩',
+    description: '提升自身防御力80%，持续3回合',
+    icon: '🛡️',
+    type: 'buff',
+    target: 'self',
+    mpCost: 30,
+    cooldown: 4,
+    effect: {
+      buffDef: 0.8,
+      duration: 3
+    },
+    requiredRealm: '元婴期',
+    unlockLevel: 1
+  },
+  {
+    id: 'skill_ultimate',
+    name: '天魔解体',
+    description: '终极技能，造成攻击力500%的伤害，但消耗自身30%当前气血',
+    icon: '💥',
+    type: 'special',
+    target: 'enemy',
+    mpCost: 50,
+    cooldown: 8,
+    effect: {
+      damageMultiplier: 5.0
+    },
+    requiredRealm: '化神期',
+    unlockLevel: 1
+  }
+];
+
+// ==========================================
+// 轮回系统配置
+// ==========================================
+
+export function getSamsaraRequirement(cycle: number): number {
+  const baseExp = 1000000; // 100万经验基础需求
+  const multiplier = Math.pow(2, cycle); // 每次轮回需求翻倍
+  return Math.floor(baseExp * multiplier);
+}
+
+export function getSamsaraBonuses(cycle: number): SamsaraState['cycleBonuses'] {
+  return {
+    atk: cycle * 50,
+    def: cycle * 30,
+    hp: cycle * 200,
+    mp: cycle * 100,
+    expRate: 1 + cycle * 0.1, // 每次轮回增加10%经验获取
+    goldRate: 1 + cycle * 0.1 // 每次轮回增加10%金币获取
+  };
 }

@@ -17,7 +17,10 @@ import {
   PillItem,
   TribulationPillItem,
   PlayerPet,
-  PetSkill
+  PetSkill,
+  SKILLS,
+  getSamsaraRequirement,
+  getSamsaraBonuses
 } from '@/types/game';
 import { getItemById } from './gameData';
 
@@ -31,6 +34,14 @@ export function createNewCharacter(name: string): Character {
   const realm: RealmType = '练气期';
   const level = 1;
   const baseStats = calculateBaseStats(realm, level);
+  
+  // 初始化技能
+  const initialSkills = SKILLS.map(skill => ({
+    skillId: skill.id,
+    level: 1,
+    unlocked: false,
+    currentCooldown: 0
+  }));
   
   return {
     name,
@@ -54,13 +65,30 @@ export function createNewCharacter(name: string): Character {
     },
     tribulationPills: 3,  // 初始赠送3颗渡劫丹
     permanentBonuses: {
-    maxHp: 0,
-    maxMp: 0
-  },
+      maxHp: 0,
+      maxMp: 0
+    },
   
-  // 宠物系统
-  pets: []
-};
+    // 宠物系统
+    pets: [],
+    
+    // 技能系统
+    skills: initialSkills,
+    
+    // 轮回系统
+    samsara: {
+      currentCycle: 0,
+      totalCycles: 0,
+      cycleBonuses: getSamsaraBonuses(0),
+      cycleRequirements: {
+        exp: getSamsaraRequirement(0)
+      },
+      canSamsara: false
+    },
+    
+    // 总累计经验
+    totalExp: 0
+  };
 }
 
 // 计算宠物属性加成
@@ -110,6 +138,15 @@ export function calculateStatsWithEquipment(character: Character): CharacterStat
   bonusMp += petBonus.mp;
   bonusAtk += petBonus.atk;
   bonusDef += petBonus.def;
+  
+  // 计算轮回加成
+  const samsaraBonuses = character.samsara?.cycleBonuses || {
+    atk: 0, def: 0, hp: 0, mp: 0, expRate: 1, goldRate: 1
+  };
+  bonusHp += samsaraBonuses.hp;
+  bonusMp += samsaraBonuses.mp;
+  bonusAtk += samsaraBonuses.atk;
+  bonusDef += samsaraBonuses.def;
   
   // 加上永久加成
   const permanentHp = character.permanentBonuses?.maxHp || 0;
@@ -299,32 +336,44 @@ export function addExperience(
 export function applyItem(
   character: Character,
   item: GameItem,
-  inventory: InventoryItem[]
+  inventory: InventoryItem[],
+  quantity: number = 1
 ): { character: Character; inventory: InventoryItem[]; message: string } {
   let message = '';
   let updatedCharacter = { ...character };
   let updatedInventory = [...inventory];
   
+  // 检查背包中物品数量是否足够
+  const invItem = inventory.find(i => i.item.id === item.id);
+  const actualQuantity = invItem ? Math.min(quantity, invItem.quantity) : 0;
+  if (actualQuantity <= 0) {
+    return { character: updatedCharacter, inventory: updatedInventory, message: '物品数量不足' };
+  }
+  
   if (item.type === 'pill') {
     const pill = item as PillItem;
+    const totalValue = pill.value * actualQuantity;
+    
     if (pill.effect === 'hp') {
       const newHp = Math.min(
         updatedCharacter.stats.maxHp,
-        updatedCharacter.stats.hp + pill.value
+        updatedCharacter.stats.hp + totalValue
       );
+      const actualHeal = newHp - updatedCharacter.stats.hp;
       updatedCharacter.stats.hp = newHp;
-      message = `使用了${pill.name}，恢复了${pill.value}点气血`;
+      message = `使用了${actualQuantity}个${pill.name}，恢复了${actualHeal}点气血`;
     } else if (pill.effect === 'mp') {
       const newMp = Math.min(
         updatedCharacter.stats.maxMp,
-        updatedCharacter.stats.mp + pill.value
+        updatedCharacter.stats.mp + totalValue
       );
+      const actualRestore = newMp - updatedCharacter.stats.mp;
       updatedCharacter.stats.mp = newMp;
-      message = `使用了${pill.name}，恢复了${pill.value}点灵力`;
+      message = `使用了${actualQuantity}个${pill.name}，恢复了${actualRestore}点灵力`;
     } else if (pill.effect === 'exp') {
-      const result = addExperience(updatedCharacter, pill.value);
+      const result = addExperience(updatedCharacter, totalValue);
       updatedCharacter = result.character;
-      message = `使用了${pill.name}，获得了${pill.value}点经验`;
+      message = `使用了${actualQuantity}个${pill.name}，获得了${totalValue}点经验`;
       if (result.leveledUp) {
         message += `，升级到了${updatedCharacter.realm}${result.newLevel}层！`;
       }
@@ -335,14 +384,14 @@ export function applyItem(
         ...updatedCharacter,
         permanentBonuses: {
           ...updatedCharacter.permanentBonuses,
-          maxHp: currentBonus + pill.value,
+          maxHp: currentBonus + totalValue,
           maxMp: updatedCharacter.permanentBonuses?.maxMp || 0
         }
       };
       // 重新计算属性
       const newStats = calculateStatsWithEquipment(updatedCharacter);
       updatedCharacter.stats = { ...newStats, hp: newStats.maxHp };
-      message = `使用了${pill.name}，永久增加了${pill.value}点最大气血！`;
+      message = `使用了${actualQuantity}个${pill.name}，永久增加了${totalValue}点最大气血！`;
     } else if (pill.effect === 'maxMp') {
       // 永久增加最大灵力
       const currentBonus = updatedCharacter.permanentBonuses?.maxMp || 0;
@@ -351,17 +400,17 @@ export function applyItem(
         permanentBonuses: {
           ...updatedCharacter.permanentBonuses,
           maxHp: updatedCharacter.permanentBonuses?.maxHp || 0,
-          maxMp: currentBonus + pill.value
+          maxMp: currentBonus + totalValue
         }
       };
       // 重新计算属性
       const newStats = calculateStatsWithEquipment(updatedCharacter);
       updatedCharacter.stats = { ...newStats, mp: newStats.maxMp };
-      message = `使用了${pill.name}，永久增加了${pill.value}点最大灵力！`;
+      message = `使用了${actualQuantity}个${pill.name}，永久增加了${totalValue}点最大灵力！`;
     }
   } else if (item.type === 'tribulation_pill') {
-    updatedCharacter.tribulationPills++;
-    message = `使用了${item.name}，渡劫时将增加10%成功率`;
+    updatedCharacter.tribulationPills += actualQuantity;
+    message = `使用了${actualQuantity}个${item.name}，渡劫时将增加${actualQuantity * 10}%成功率`;
   } else if (item.type === 'equipment') {
     const equipment = item as EquipmentItem;
     const result = equipItem(updatedCharacter, equipment);
@@ -374,7 +423,7 @@ export function applyItem(
   }
   
   // 减少物品数量
-  updatedInventory = removeFromInventory(updatedInventory, item.id, 1);
+  updatedInventory = removeFromInventory(updatedInventory, item.id, actualQuantity);
   
   return { character: updatedCharacter, inventory: updatedInventory, message };
 }

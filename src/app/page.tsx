@@ -18,6 +18,8 @@ import { DungeonPanel } from '@/components/game/DungeonPanel';
 import { CheatCodeDialog } from '@/components/game/CheatCodeDialog';
 import { PetPanel } from '@/components/game/PetPanel';
 import { PetShop } from '@/components/game/PetShop';
+import { SkillPanel } from '@/components/game/SkillPanel';
+import { SamsaraPanel } from '@/components/game/SamsaraPanel';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +38,8 @@ import {
   Castle,
   Terminal,
   PawPrint,
-  ShoppingBag
+  ShoppingBag,
+  Infinity
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -114,7 +117,10 @@ export default function Home() {
     deactivatePet,
     renamePet,
     evolvePet,
-    levelUpPet
+    levelUpPet,
+    unlockSkill,
+    useSkill,
+    doSamsara
   } = useGameState();
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -493,7 +499,7 @@ export default function Home() {
 
           <div className="lg:col-span-3 space-y-4">
             <Tabs value={currentTab} onValueChange={(v) => setTab(v as GameTab)} className="w-full">
-              <TabsList className="grid grid-cols-8 bg-white border border-slate-200 shadow-sm h-auto">
+              <TabsList className="grid grid-cols-10 bg-white border border-slate-200 shadow-sm h-auto">
                 <TabsTrigger value="map" className="text-xs sm:text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700 py-2">
                   <Map className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">地图</span>
@@ -501,6 +507,14 @@ export default function Home() {
                 <TabsTrigger value="battle" className="text-xs sm:text-sm data-[state=active]:bg-amber-100 data-[state=active]:text-amber-700 py-2">
                   <Swords className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">战斗</span>
+                </TabsTrigger>
+                <TabsTrigger value="skill" className="text-xs sm:text-sm data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 py-2">
+                  <Sparkles className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">技能</span>
+                </TabsTrigger>
+                <TabsTrigger value="samsara" className="text-xs sm:text-sm data-[state=active]:bg-amber-100 data-[state=active]:text-amber-700 py-2">
+                  <Infinity className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">轮回</span>
                 </TabsTrigger>
                 <TabsTrigger value="dungeon" className="text-xs sm:text-sm data-[state=active]:bg-slate-200 data-[state=active]:text-slate-700 py-2">
                   <Castle className="w-4 h-4 sm:mr-1" />
@@ -555,6 +569,24 @@ export default function Home() {
                   onQuickBattle={extendedQuickBattle}
                   addLog={addLog}
                   isGodMode={isGodModeActive(activeCheatEffects)}
+                  setCharacter={setCharacter}
+                  setInventory={setInventory}
+                  inventory={inventory}
+                />
+              </TabsContent>
+
+              <TabsContent value="skill" className="mt-4">
+                <SkillPanel 
+                  character={character}
+                  onUnlockSkill={unlockSkill}
+                  onUseSkill={useSkill}
+                />
+              </TabsContent>
+
+              <TabsContent value="samsara" className="mt-4">
+                <SamsaraPanel 
+                  character={character}
+                  onSamsara={doSamsara}
                 />
               </TabsContent>
 
