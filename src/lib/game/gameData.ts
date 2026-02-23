@@ -139,6 +139,34 @@ export const PILLS: PillItem[] = [
     icon: '💫',
     effect: 'maxMp',
     value: 100
+  },
+  // 技能丹药
+  {
+    id: 'pill_skill_small',
+    name: '悟道丹',
+    type: 'pill',
+    description: '技能熟练度+1',
+    icon: '📖',
+    effect: 'skill',
+    value: 1
+  },
+  {
+    id: 'pill_skill_medium',
+    name: '通玄丹',
+    type: 'pill',
+    description: '技能熟练度+3',
+    icon: '📖',
+    effect: 'skill',
+    value: 3
+  },
+  {
+    id: 'pill_skill_large',
+    name: '天悟丹',
+    type: 'pill',
+    description: '技能熟练度+10',
+    icon: '📖',
+    effect: 'skill',
+    value: 10
   }
 ];
 

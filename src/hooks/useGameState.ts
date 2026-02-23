@@ -26,6 +26,7 @@ import {
   fullRestore,
   generateId,
   calculateStatsWithEquipment,
+  upgradeSkill,
 } from '@/lib/game/gameEngine';
 import {
   SKILLS,
@@ -103,6 +104,7 @@ interface UseGameStateReturn {
   // 技能系统
   unlockSkill: (skillId: string) => void;
   useSkill: (skillId: string) => void;
+  upgradeSkill: (skillId: string, levels?: number) => void;
   
   // 轮回系统
   doSamsara: () => void;
@@ -813,6 +815,15 @@ export function useGameState(): UseGameStateReturn {
     addLog('system', `使用了技能：${skill.name}`);
   }, [character, addLog]);
   
+  // 升级技能
+  const upgradeSkillHandler = useCallback((skillId: string, levels: number = 1) => {
+    if (!character) return;
+    
+    const result = upgradeSkill(character, skillId, levels);
+    setCharacter(result.character);
+    addLog('system', result.message);
+  }, [character, addLog]);
+  
   // 执行轮回
   const doSamsara = useCallback(() => {
     if (!character) return;
@@ -877,6 +888,7 @@ export function useGameState(): UseGameStateReturn {
     levelUpPet,
     unlockSkill,
     useSkill,
+    upgradeSkill: upgradeSkillHandler,
     doSamsara
   };
 }

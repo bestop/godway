@@ -407,6 +407,21 @@ export function applyItem(
       const newStats = calculateStatsWithEquipment(updatedCharacter);
       updatedCharacter.stats = { ...newStats, mp: newStats.maxMp };
       message = `使用了${actualQuantity}个${pill.name}，永久增加了${totalValue}点最大灵力！`;
+    } else if (pill.effect === 'skill') {
+      // 技能升级 - 需要选择技能，这里先默认升级第一个解锁的技能
+      const firstUnlockedSkillIndex = updatedCharacter.skills.findIndex(s => s.unlocked);
+      if (firstUnlockedSkillIndex >= 0) {
+        const skillToUpgrade = updatedCharacter.skills[firstUnlockedSkillIndex];
+        const newLevel = skillToUpgrade.level + totalValue;
+        updatedCharacter.skills = [...updatedCharacter.skills];
+        updatedCharacter.skills[firstUnlockedSkillIndex] = {
+          ...skillToUpgrade,
+          level: newLevel
+        };
+        message = `使用了${actualQuantity}个${pill.name}，技能等级提升${totalValue}级！`;
+      } else {
+        message = `没有解锁的技能可以升级！`;
+      }
     }
   } else if (item.type === 'tribulation_pill') {
     updatedCharacter.tribulationPills += actualQuantity;
@@ -624,5 +639,51 @@ export function fullRestore(character: Character): Character {
       hp: maxHp,
       mp: maxMp
     }
+  };
+}
+
+// 升级指定技能
+export function upgradeSkill(character: Character, skillId: string, levels: number = 1): { character: Character; message: string; success: boolean } {
+  const skillIndex = character.skills.findIndex(s => s.skillId === skillId);
+  
+  if (skillIndex === -1) {
+    return { character, message: '未找到该技能', success: false };
+  }
+  
+  const skillToUpgrade = character.skills[skillIndex];
+  
+  if (!skillToUpgrade.unlocked) {
+    return { character, message: '技能尚未解锁', success: false };
+  }
+  
+  const newLevel = skillToUpgrade.level + levels;
+  
+  const updatedSkills = [...character.skills];
+  updatedSkills[skillIndex] = {
+    ...skillToUpgrade,
+    level: newLevel
+  };
+  
+  const updatedCharacter = {
+    ...character,
+    skills: updatedSkills
+  };
+  
+  return { 
+    character: updatedCharacter, 
+    message: `技能升级成功！当前等级: ${newLevel}`, 
+    success: true 
+  };
+}
+
+// 计算技能效果（考虑技能等级加成）
+export function calculateSkillEffect(skill: any, skillLevel: number = 1) {
+  const levelMultiplier = 1 + (skillLevel - 1) * 0.1; // 每级增加10%效果
+  
+  return {
+    damage: skill.effect.damage ? Math.floor(skill.effect.damage * levelMultiplier) : undefined,
+    damageMultiplier: skill.effect.damageMultiplier ? skill.effect.damageMultiplier * levelMultiplier : undefined,
+    heal: skill.effect.heal ? Math.floor(skill.effect.heal * levelMultiplier) : undefined,
+    healMultiplier: skill.effect.healMultiplier ? skill.effect.healMultiplier * levelMultiplier : undefined
   };
 }

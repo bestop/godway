@@ -120,6 +120,7 @@ export default function Home() {
     levelUpPet,
     unlockSkill,
     useSkill,
+    upgradeSkill,
     doSamsara
   } = useGameState();
 
@@ -578,8 +579,11 @@ export default function Home() {
               <TabsContent value="skill" className="mt-4">
                 <SkillPanel 
                   character={character}
+                  inventory={inventory}
                   onUnlockSkill={unlockSkill}
                   onUseSkill={useSkill}
+                  onUpgradeSkill={upgradeSkill}
+                  onUseItem={useItem}
                 />
               </TabsContent>
 

@@ -108,7 +108,7 @@ export interface BaseItem {
 // 丹药物品
 export interface PillItem extends BaseItem {
   type: 'pill';
-  effect: 'hp' | 'mp' | 'exp' | 'maxHp' | 'maxMp';  // 新增永久提升类型
+  effect: 'hp' | 'mp' | 'exp' | 'maxHp' | 'maxMp' | 'skill';  // 新增技能升级类型
   value: number; // 效果值
 }
 
