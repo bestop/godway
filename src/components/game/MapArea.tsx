@@ -213,8 +213,9 @@ export function MapArea({ character, onEncounter, addLog }: MapAreaProps) {
   };
 
   // 根据区域获取对应怪物
-  const getMonsterForRegion = (region: MapRegion): Monster => {
+  const getMonsterForRegion = (region: MapRegion): Monster | null => {
     const monsters = getMonstersByRealm(character.realm);
+    if (monsters.length === 0) return null;
     const adjustedLevel = Math.min(region.level, 9);
     const monster = monsters.find(m => m.level === adjustedLevel) || monsters[0];
     return monster;
@@ -294,14 +295,26 @@ export function MapArea({ character, onEncounter, addLog }: MapAreaProps) {
     // 随机遇怪判定
     if (Math.random() < region.encounterRate) {
       const monster = getMonsterForRegion(region);
-      setEncounterMonster(monster);
-      setShowEncounter(true);
-      addLog('battle', `在${region.name}遇到了${monster.name}！`);
+      if (monster) {
+        setEncounterMonster(monster);
+        setShowEncounter(true);
+        addLog('battle', `在${region.name}遇到了${monster.name}！`);
 
-      setTimeout(() => {
-        setShowEncounter(false);
-        onEncounter(monster);
-      }, 2000);
+        setTimeout(() => {
+          setShowEncounter(false);
+          onEncounter(monster);
+        }, 2000);
+      } else {
+        // 没有找到怪物，给安全奖励
+        const goldFound = Math.floor(Math.random() * 50 * region.level) + 10;
+        setRewardGold(goldFound);
+        setShowReward(true);
+        addLog('system', `探索${region.name}，安全通过，发现${goldFound}金币！`);
+
+        setTimeout(() => {
+          setShowReward(false);
+        }, 2500);
+      }
     } else {
       // 安全探索，获得奖励
       const goldFound = Math.floor(Math.random() * 50 * region.level) + 10;

@@ -209,6 +209,37 @@ export default function Home() {
   const handleReward = useCallback((exp: number, gold: number, items: string[]) => {
     if (!character) return;
     
+    let updatedCharacter = { ...character };
+    
+    // 增加金币
+    if (gold > 0) {
+      updatedCharacter.gold += gold;
+    }
+    
+    // 增加经验
+    if (exp > 0) {
+      const expResult = addExperience(updatedCharacter, exp);
+      updatedCharacter = expResult.character;
+      
+      if (expResult.leveledUp) {
+        addLog('level_up', `恭喜！升级到了${updatedCharacter.realm}${expResult.newLevel}层！`);
+      }
+    }
+    
+    // 处理物品
+    if (items.length > 0) {
+      let newInventory = [...inventory];
+      items.forEach(itemId => {
+        const item = getItemById(itemId);
+        if (item) {
+          newInventory = addToInventory(newInventory, item, 1);
+          addLog('item', `获得了${item.name}！`);
+        }
+      });
+      setInventory(newInventory);
+    }
+    
+    // 更新统计信息
     if (exp > 0 || gold > 0 || items.length > 0) {
       setStatistics(prev => ({
         ...prev,
@@ -216,7 +247,12 @@ export default function Home() {
         totalExpEarned: prev.totalExpEarned + exp
       }));
     }
-  }, [character]);
+    
+    // 更新角色状态
+    const stats = calculateStatsWithEquipment(updatedCharacter);
+    updatedCharacter.stats = { ...updatedCharacter.stats, maxHp: stats.maxHp, maxMp: stats.maxMp };
+    setCharacter(updatedCharacter);
+  }, [character, inventory, addLog, setCharacter, setInventory]);
 
   const handleQuestProgressUpdate = useCallback((progress: QuestProgress[]) => {
     setQuestProgress(progress);

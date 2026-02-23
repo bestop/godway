@@ -266,8 +266,52 @@ export function useGameState(): UseGameStateReturn {
       if (expResult.leveledUp) {
         addLog('level_up', `恭喜！升级到了${updatedCharacter.realm}${expResult.newLevel}层！`);
       }
+      
+      // 更新宠物战斗次数、经验和忠诚度
+      if (updatedCharacter.pets && updatedCharacter.pets.length > 0) {
+        updatedCharacter.pets = updatedCharacter.pets.map(pet => {
+          if (pet.isActive) {
+            const petExpGain = Math.floor(monster.exp * 0.3);
+            const loyaltyGain = 1;
+            const updatedPet = { ...pet.pet };
+            updatedPet.exp += petExpGain;
+            updatedPet.loyalty = Math.min(100, updatedPet.loyalty + loyaltyGain);
+            
+            // 检查宠物升级
+            while (updatedPet.exp >= updatedPet.maxExp) {
+              const leveledPet = levelUpPetUtil(updatedPet);
+              updatedPet.level = leveledPet.level;
+              updatedPet.exp = leveledPet.exp;
+              updatedPet.maxExp = leveledPet.maxExp;
+              updatedPet.stats = leveledPet.stats;
+              addLog('pet', `宠物 ${updatedPet.name} 升级了！`);
+            }
+            
+            return {
+              ...pet,
+              pet: updatedPet,
+              battleCount: (pet.battleCount || 0) + 1,
+              winCount: (pet.winCount || 0) + 1
+            };
+          }
+          return pet;
+        });
+      }
     } else {
       addLog('battle', `被${monster.name}击败了...`);
+      
+      // 更新宠物战斗次数（失败也计入）
+      if (updatedCharacter.pets && updatedCharacter.pets.length > 0) {
+        updatedCharacter.pets = updatedCharacter.pets.map(pet => {
+          if (pet.isActive) {
+            return {
+              ...pet,
+              battleCount: (pet.battleCount || 0) + 1
+            };
+          }
+          return pet;
+        });
+      }
     }
     
     // 更新血量
@@ -321,8 +365,53 @@ export function useGameState(): UseGameStateReturn {
       if (expResult.leveledUp) {
         addLog('level_up', `恭喜！升级到了${updatedCharacter.realm}${expResult.newLevel}层！`);
       }
+      
+      // 更新宠物战斗次数、经验和忠诚度
+      if (updatedCharacter.pets && updatedCharacter.pets.length > 0) {
+        const bonusExp = Math.floor(monster.exp * 1.2);
+        updatedCharacter.pets = updatedCharacter.pets.map(pet => {
+          if (pet.isActive) {
+            const petExpGain = Math.floor(bonusExp * 0.3);
+            const loyaltyGain = 1;
+            const updatedPet = { ...pet.pet };
+            updatedPet.exp += petExpGain;
+            updatedPet.loyalty = Math.min(100, updatedPet.loyalty + loyaltyGain);
+            
+            // 检查宠物升级
+            while (updatedPet.exp >= updatedPet.maxExp) {
+              const leveledPet = levelUpPetUtil(updatedPet);
+              updatedPet.level = leveledPet.level;
+              updatedPet.exp = leveledPet.exp;
+              updatedPet.maxExp = leveledPet.maxExp;
+              updatedPet.stats = leveledPet.stats;
+              addLog('pet', `宠物 ${updatedPet.name} 升级了！`);
+            }
+            
+            return {
+              ...pet,
+              pet: updatedPet,
+              battleCount: (pet.battleCount || 0) + 1,
+              winCount: (pet.winCount || 0) + 1
+            };
+          }
+          return pet;
+        });
+      }
     } else {
       addLog('battle', `被${monster.name}击败了...`);
+      
+      // 更新宠物战斗次数（失败也计入）
+      if (updatedCharacter.pets && updatedCharacter.pets.length > 0) {
+        updatedCharacter.pets = updatedCharacter.pets.map(pet => {
+          if (pet.isActive) {
+            return {
+              ...pet,
+              battleCount: (pet.battleCount || 0) + 1
+            };
+          }
+          return pet;
+        });
+      }
     }
     
     // 更新血量

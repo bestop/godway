@@ -372,21 +372,41 @@ export function PetPanel({
                 {/* 操作按钮 */}
                 <div className="flex flex-wrap gap-2">
                   {selectedPet.isActive ? (
-                    <Button 
-                      variant="ghost"
-                      onClick={() => onDeactivatePet(selectedPet.pet.id)}
-                    >
-                      <Power className="w-4 h-4 mr-1" />
-                      休息
-                    </Button>
+                    <>
+                      <Button 
+                        variant="ghost"
+                        onClick={() => onDeactivatePet(selectedPet.pet.id)}
+                      >
+                        <Power className="w-4 h-4 mr-1" />
+                        休息
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        disabled
+                        className="text-green-600 cursor-not-allowed opacity-60"
+                      >
+                        <Sword className="w-4 h-4 mr-1" />
+                        已出战
+                      </Button>
+                    </>
                   ) : (
-                    <Button 
-                      onClick={() => onActivatePet(selectedPet.pet.id)}
-                      className="bg-green-500 hover:bg-green-600"
-                    >
-                      <Sword className="w-4 h-4 mr-1" />
-                      出战
-                    </Button>
+                    <>
+                      <Button 
+                        onClick={() => onActivatePet(selectedPet.pet.id)}
+                        className="bg-green-500 hover:bg-green-600"
+                      >
+                        <Sword className="w-4 h-4 mr-1" />
+                        出战
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        disabled
+                        className="text-slate-400 cursor-not-allowed opacity-60"
+                      >
+                        <Power className="w-4 h-4 mr-1" />
+                        休息中
+                      </Button>
+                    </>
                   )}
                   
                   {selectedPet.pet.canEvolve && selectedPet.pet.level >= (selectedPet.pet.evolutionLevel || 20) && (
@@ -452,25 +472,26 @@ export function PetPanel({
 
       {/* 重命名对话框 */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogHeader>
-          <DialogTitle>重命名宠物</DialogTitle>
-        </DialogHeader>
         <DialogContent>
-          <Input
-            value={newNickname}
-            onChange={(e) => setNewNickname(e.target.value)}
-            placeholder="输入新昵称"
-            className="mb-4"
-          />
+          <DialogHeader>
+            <DialogTitle>重命名宠物</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newNickname}
+              onChange={(e) => setNewNickname(e.target.value)}
+              placeholder="输入新昵称"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleRename} disabled={!newNickname.trim()}>
+              确认
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setRenameDialogOpen(false)}>
-            取消
-          </Button>
-          <Button onClick={handleRename} disabled={!newNickname.trim()}>
-            确认
-          </Button>
-        </DialogFooter>
       </Dialog>
     </div>
   );

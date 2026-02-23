@@ -54,11 +54,13 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
   const [playerShake, setPlayerShake] = useState(false);
   const [comboCount, setComboCount] = useState(0);
   const [damageText, setDamageText] = useState<{player: number; monster: number}>({player: 0, monster: 0});
+  const [petAttackEffect, setPetAttackEffect] = useState(false);
+  const [petDamageText, setPetDamageText] = useState(0);
   
   const monsters = getMonstersByRealm(character.realm);
   const maxMonsterHp = selectedMonster?.hp || 1;
   
-  // 模拟战斗回合
+  // 模拟战斗回合 - 超快速版，增加伤害倍数
   const simulateBattle = useCallback((monster: Monster) => {
     const rounds: BattleRound[] = [];
     let playerHp = character.stats.hp;
@@ -67,13 +69,37 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
     const playerAtk = character.stats.atk;
     const playerDef = character.stats.def;
     
-    while (playerHp > 0 && monsterHp > 0) {
-      const playerDamage = Math.max(1, Math.floor(playerAtk * (1 - monster.def / (monster.def + 100))));
-      monsterHp -= playerDamage;
+    // 获取激活的宠物
+    const activePets = (character.pets || []).filter(pet => pet.isActive);
+    
+    // 伤害倍数 - 大幅加快战斗速度
+    const damageMultiplier = 10;
+    
+    // 限制最大回合数，确保15秒内结束
+    const maxRounds = 50;
+    let roundCount = 0;
+    
+    while (playerHp > 0 && monsterHp > 0 && roundCount < maxRounds) {
+      roundCount++;
+      let totalPlayerDamage = 0;
+      
+      // 玩家攻击 - 增加伤害倍数
+      const playerDamage = Math.max(1, Math.floor(playerAtk * (1 - monster.def / (monster.def + 100)) * damageMultiplier));
+      totalPlayerDamage += playerDamage;
+      
+      // 宠物攻击 - 增加伤害倍数
+      activePets.forEach(pet => {
+        const petAtk = pet.pet.stats.atk || 0;
+        const petDamage = Math.max(1, Math.floor(petAtk * 0.8 * (1 - monster.def / (monster.def + 150)) * damageMultiplier));
+        totalPlayerDamage += petDamage;
+        setPetDamageText(petDamage);
+      });
+      
+      monsterHp -= totalPlayerDamage;
       
       if (monsterHp <= 0) {
         rounds.push({
-          playerDamage,
+          playerDamage: totalPlayerDamage,
           monsterDamage: 0,
           playerHp,
           monsterHp: 0
@@ -86,17 +112,27 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
       playerHp -= monsterDamage;
       
       rounds.push({
-        playerDamage,
+        playerDamage: totalPlayerDamage,
         monsterDamage,
         playerHp: Math.max(0, playerHp),
         monsterHp: Math.max(0, monsterHp)
       });
     }
     
+    // 如果达到最大回合数，直接判胜
+    if (roundCount >= maxRounds && monsterHp > 0) {
+      rounds.push({
+        playerDamage: monsterHp,
+        monsterDamage: 0,
+        playerHp,
+        monsterHp: 0
+      });
+    }
+    
     return rounds;
   }, [character, isGodMode]);
   
-  // 执行战斗动画序列（优化版 - 更快速流畅）
+  // 执行战斗动画序列（极速版）
   useEffect(() => {
     if (isQuickBattle || !isBattling || !selectedMonster) return;
     
@@ -107,6 +143,7 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
     setComboCount(0);
     setDamageText({player: 0, monster: 0});
     
+    // 极速速度 - 几乎消除所有延迟
     let roundIndex = 0;
     
     const executeRound = () => {
@@ -120,8 +157,8 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
           setIsBattling(false);
           setBattlePhase('idle');
           onQuickBattle();
-          setTimeout(() => setShowResult(false), 1000);
-        }, 250);
+          setTimeout(() => setShowResult(false), 150);
+        }, 50);
         return;
       }
       
@@ -129,7 +166,7 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
       setCurrentRound(roundIndex + 1);
       setComboCount(roundIndex + 1);
       
-      // 玩家攻击
+      // 玩家攻击 - 极快
       setBattlePhase('player_attack');
       setShowSlashEffect(true);
       setDamageText(prev => ({...prev, monster: round.playerDamage}));
@@ -148,7 +185,7 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
             return;
           }
           
-          // 怪物攻击
+          // 怪物攻击 - 极快
           setBattlePhase('monster_attack');
           setShowImpactEffect(true);
           setDamageText(prev => ({...prev, player: round.monsterDamage}));
@@ -162,17 +199,27 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
               setPlayerShake(false);
               setBattlePhase('damage');
               
+              // 宠物攻击动画 - 极快
+              const activePets = (character.pets || []).filter(pet => pet.isActive);
+              if (activePets.length > 0) {
+                setPetAttackEffect(true);
+                setTimeout(() => {
+                  setPetAttackEffect(false);
+                }, 30);
+              }
+              
               setTimeout(() => {
                 roundIndex++;
                 executeRound();
-              }, 60);
-            }, 60);
-          }, 80);
-        }, 80);
-      }, 100);
+              }, 5);
+            }, 5);
+          }, 10);
+        }, 10);
+      }, 15);
     };
     
-    const startTimer = setTimeout(executeRound, 150);
+    // 立即开始，无延迟
+    const startTimer = setTimeout(executeRound, 0);
     return () => clearTimeout(startTimer);
   }, [isBattling, isQuickBattle, selectedMonster, character, simulateBattle, onQuickBattle]);
 
@@ -365,6 +412,37 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
                 </div>
               </div>
               
+              {/* 宠物头像显示 */}
+              {(() => {
+                const activePets = (character.pets || []).filter(pet => pet.isActive);
+                if (activePets.length === 0) return null;
+                
+                return activePets.map((pet, index) => (
+                  <div 
+                    key={pet.pet.id}
+                    className={`absolute transition-all duration-100 ${
+                      petAttackEffect ? 'scale-125' : ''
+                    }`}
+                    style={{ 
+                      left: `${80 + index * 50}px`, 
+                      top: '50%', 
+                      transform: 'translateY(-50%)' 
+                    }}
+                  >
+                    <div className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center shadow-lg transition-all duration-100 ${
+                      petAttackEffect 
+                        ? 'bg-gradient-to-b from-purple-500 to-pink-600 border-purple-300 animate-pulse' 
+                        : 'bg-gradient-to-b from-purple-600 to-purple-800 border-purple-400'
+                    }`}>
+                      <span className="text-xl">{pet.pet.icon}</span>
+                    </div>
+                    <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                      <div className="text-[9px] font-bold text-purple-300">{pet.pet.name}</div>
+                    </div>
+                  </div>
+                ));
+              })()}
+              
               {/* 怪物 */}
               <div className={`absolute right-6 top-1/2 transform -translate-y-1/2 transition-all duration-100 ${
                 monsterShake ? 'scale-95' : ''
@@ -405,6 +483,23 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
                   </div>
                 </div>
               </div>
+              
+              {/* 宠物攻击动画 */}
+              {petAttackEffect && (
+                <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                  <div className="relative">
+                    <div className="w-32 h-32 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full border-4 border-purple-300 animate-ping" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-4xl">⚡</span>
+                    </div>
+                    <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2">
+                      <div className="bg-black/80 text-white text-xs px-2 py-1 rounded">
+                        +{petDamageText}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

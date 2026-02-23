@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Character, Achievement, AchievementProgress, GameLogEntry } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -118,43 +118,56 @@ export function AchievementPanel({
   const completedCount = achievementProgress.filter(p => p.claimed).length;
   const totalAchievements = ACHIEVEMENTS.length;
 
+  useEffect(() => {
+    let updatedProgress = [...achievementProgress];
+    let hasChanges = false;
+    const newCompletedAchievements: string[] = [];
+
+    ACHIEVEMENTS.forEach(achievement => {
+      const currentCount = getCurrentCount(achievement);
+      const isCompleted = currentCount >= achievement.requirement.target;
+      const existingProgress = updatedProgress.find(p => p.achievementId === achievement.id);
+
+      if (!existingProgress) {
+        updatedProgress.push({
+          achievementId: achievement.id,
+          currentCount,
+          completed: isCompleted,
+          claimed: false
+        });
+        hasChanges = true;
+        if (isCompleted) {
+          newCompletedAchievements.push(achievement.name);
+        }
+      } else {
+        if (!existingProgress.completed && isCompleted) {
+          updatedProgress = updatedProgress.map(p => 
+            p.achievementId === achievement.id ? { ...p, completed: true, currentCount } : p
+          );
+          hasChanges = true;
+          newCompletedAchievements.push(achievement.name);
+        } else if (existingProgress.currentCount !== currentCount) {
+          updatedProgress = updatedProgress.map(p => 
+            p.achievementId === achievement.id ? { ...p, currentCount } : p
+          );
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      onUpdateProgress(updatedProgress);
+      newCompletedAchievements.forEach(name => {
+        addLog('achievement', `成就进度达成：${name}！`);
+      });
+    }
+  }, [character, statistics, achievementProgress, onUpdateProgress, addLog]);
+
   const renderAchievementCard = (achievement: Achievement) => {
     const status = getAchievementStatus(achievement);
     const currentCount = getCurrentCount(achievement);
     const target = achievement.requirement.target;
     const progressPercent = Math.min(100, (currentCount / target) * 100);
-    const isCompleted = checkCompletion(achievement);
-
-    if (status === 'locked' && !isCompleted) {
-      const updatedProgress = [...achievementProgress];
-      const existingIndex = updatedProgress.findIndex(p => p.achievementId === achievement.id);
-      if (existingIndex === -1) {
-        updatedProgress.push({
-          achievementId: achievement.id,
-          currentCount,
-          completed: false,
-          claimed: false
-        });
-      }
-    }
-
-    if (status === 'locked' || status === 'in_progress') {
-      if (isCompleted && !achievementProgress.find(p => p.achievementId === achievement.id)?.completed) {
-        const updatedProgress = achievementProgress.map(p => 
-          p.achievementId === achievement.id ? { ...p, completed: true } : p
-        );
-        if (!updatedProgress.find(p => p.achievementId === achievement.id)) {
-          updatedProgress.push({
-            achievementId: achievement.id,
-            currentCount,
-            completed: true,
-            claimed: false
-          });
-        }
-        onUpdateProgress(updatedProgress);
-        addLog('achievement', `成就进度达成：${achievement.name}！`);
-      }
-    }
 
     return (
       <Card key={achievement.id} className={`mb-2 ${

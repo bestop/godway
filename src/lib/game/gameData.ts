@@ -1475,6 +1475,151 @@ export const MONSTERS: Monster[] = [
       { itemId: 'accessory_dacheng_1', rate: 0.08 }
     ],
     icon: '🌟'
+  },
+  // 渡劫期怪物
+  {
+    id: 'monster_dujie_1',
+    name: '渡劫妖圣',
+    realm: '渡劫期',
+    level: 1,
+    hp: 50000000,
+    atk: 1600000,
+    def: 800000,
+    exp: 1200000000,
+    gold: 650000000,
+    drops: [
+      { itemId: 'tribulation_pill', rate: 0.75 },
+      { itemId: 'weapon_dacheng_1', rate: 0.05 }
+    ],
+    icon: '🐉'
+  },
+  {
+    id: 'monster_dujie_2',
+    name: '天魔至尊',
+    realm: '渡劫期',
+    level: 2,
+    hp: 65000000,
+    atk: 2000000,
+    def: 1000000,
+    exp: 1600000000,
+    gold: 850000000,
+    drops: [
+      { itemId: 'pill_exp_large', rate: 0.5 },
+      { itemId: 'armor_dacheng_1', rate: 0.05 }
+    ],
+    icon: '😈'
+  },
+  {
+    id: 'monster_dujie_3',
+    name: '上古神魔',
+    realm: '渡劫期',
+    level: 3,
+    hp: 85000000,
+    atk: 2500000,
+    def: 1250000,
+    exp: 2200000000,
+    gold: 1150000000,
+    drops: [
+      { itemId: 'tribulation_pill', rate: 0.8 },
+      { itemId: 'material_soul', rate: 0.3 }
+    ],
+    icon: '👹'
+  },
+  {
+    id: 'monster_dujie_4',
+    name: '混沌神兽',
+    realm: '渡劫期',
+    level: 4,
+    hp: 110000000,
+    atk: 3200000,
+    def: 1600000,
+    exp: 3000000000,
+    gold: 1550000000,
+    drops: [
+      { itemId: 'weapon_dacheng_1', rate: 0.05 },
+      { itemId: 'material_soul', rate: 0.35 }
+    ],
+    icon: '🦁'
+  },
+  {
+    id: 'monster_dujie_5',
+    name: '祖龙',
+    realm: '渡劫期',
+    level: 5,
+    hp: 140000000,
+    atk: 4000000,
+    def: 2000000,
+    exp: 4000000000,
+    gold: 2000000000,
+    drops: [
+      { itemId: 'armor_dacheng_1', rate: 0.05 },
+      { itemId: 'accessory_dacheng_1', rate: 0.05 }
+    ],
+    icon: '🐲'
+  },
+  {
+    id: 'monster_dujie_6',
+    name: '大道天魔',
+    realm: '渡劫期',
+    level: 6,
+    hp: 175000000,
+    atk: 4800000,
+    def: 2400000,
+    exp: 5200000000,
+    gold: 2500000000,
+    drops: [
+      { itemId: 'tribulation_pill', rate: 0.85 },
+      { itemId: 'weapon_dacheng_1', rate: 0.06 }
+    ],
+    icon: '👿'
+  },
+  {
+    id: 'monster_dujie_7',
+    name: '大道妖神',
+    realm: '渡劫期',
+    level: 7,
+    hp: 215000000,
+    atk: 5600000,
+    def: 2800000,
+    exp: 6500000000,
+    gold: 3100000000,
+    drops: [
+      { itemId: 'material_soul', rate: 0.4 },
+      { itemId: 'armor_dacheng_1', rate: 0.06 }
+    ],
+    icon: '👑'
+  },
+  {
+    id: 'monster_dujie_8',
+    name: '大道魔神',
+    realm: '渡劫期',
+    level: 8,
+    hp: 260000000,
+    atk: 6400000,
+    def: 3200000,
+    exp: 8000000000,
+    gold: 3900000000,
+    drops: [
+      { itemId: 'accessory_dacheng_1', rate: 0.06 },
+      { itemId: 'tribulation_pill', rate: 0.9 }
+    ],
+    icon: '🔥'
+  },
+  {
+    id: 'monster_dujie_9',
+    name: '渡劫巅峰道祖',
+    realm: '渡劫期',
+    level: 9,
+    hp: 320000000,
+    atk: 8000000,
+    def: 4000000,
+    exp: 10000000000,
+    gold: 5000000000,
+    drops: [
+      { itemId: 'tribulation_pill', rate: 0.95 },
+      { itemId: 'weapon_dacheng_1', rate: 0.08 }
+    ],
+    icon: '🌟'
   }
 ];
 
