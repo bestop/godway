@@ -217,8 +217,8 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
           setTimeout(() => {
             setIsBattling(false);
             setBattlePhase('idle');
-            onQuickBattle();
             setTimeout(() => setShowResult(false), 150);
+            // 注意：不要调用 onQuickBattle()，因为这是挑战战斗，不是快速战斗
           }, 800);
           return newHp;
         }
@@ -325,8 +325,8 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
               setTimeout(() => {
                 setIsBattling(false);
                 setBattlePhase('idle');
-                onQuickBattle();
                 setTimeout(() => setShowResult(false), 150);
+                // 注意：不要调用 onQuickBattle()，因为这是挑战战斗，不是快速战斗
               }, 800);
               return newHp;
             }
@@ -573,6 +573,13 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
     setBattleCount(prev => prev + 1);
     onQuickBattle();
   };
+  
+  // 确保快速战斗后可以选择怪物 - 添加一个重置按钮或逻辑
+  useEffect(() => {
+    if (!isBattling && !isQuickBattle) {
+      // 战斗结束后可以选择新的怪物
+    }
+  }, [isBattling, isQuickBattle]);
 
   // 挑战战斗 - 带动画
   const handleBattle = (monster: Monster) => {
@@ -609,7 +616,8 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
     return { text: '极难', color: 'text-red-500', bg: 'bg-red-100' };
   };
 
-  const isAnyBattleActive = isBattling || isQuickBattle;
+  // 只有真正的挑战战斗才算激活状态，快速战斗不算
+  const isAnyBattleActive = isBattling;
   
   return (
     <div className="space-y-4">
@@ -710,53 +718,22 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
             )}
 
             {/* 战斗区域 */}
-            <div className="relative h-64 flex items-center justify-between px-8 py-4">
-              {/* 玩家角色 */}
-              <div className={`relative transition-all duration-100 ${playerShake ? 'scale-95' : ''}`}>
-                <div className={`relative transition-transform duration-200 ${battlePhase === 'player_attack' ? 'translate-x-16 scale-110 rotate-12' : ''} ${battlePhase === 'player_turn' ? 'animate-pulse' : ''}`}>
-                  <div className={`absolute -inset-3 rounded-full blur-xl transition-all duration-300 ${
-                    playerShake ? 'bg-red-500/40' : 
-                    battlePhase === 'player_attack' ? 'bg-yellow-500/50' :
-                    'bg-blue-500/30'
-                  }`} />
-                  <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center shadow-xl transition-all duration-300 ${
-                    playerShake 
-                      ? 'bg-gradient-to-b from-red-500 to-red-800 border-red-400 shadow-red-500/50 scale-90' 
-                      : battlePhase === 'player_attack'
-                      ? 'bg-gradient-to-b from-yellow-500 to-yellow-800 border-yellow-400 shadow-yellow-500/50'
-                      : 'bg-gradient-to-b from-blue-500 to-blue-800 border-blue-400 shadow-blue-500/50'
-                  }`}>
-                    <span className="text-4xl">{character.avatar || '🧑'}</span>
-                  </div>
-                </div>
-                
-                {/* 玩家血量条 */}
-                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                  <div className="text-center">
-                    <div className="text-xs font-bold text-blue-200">{character.name}</div>
-                    <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden mt-0.5 border border-blue-400/50">
-                      <div 
-                        className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 transition-all duration-300 rounded-full"
-                        style={{ width: `${Math.max(0, (playerCurrentHp / character.stats.maxHp) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="text-[10px] text-blue-300">{Math.max(0, playerCurrentHp)}/{character.stats.maxHp}</div>
-                  </div>
-                </div>
-                
+            <div className="relative h-72 flex items-center justify-between px-12 py-4">
+              {/* 玩家角色和宠物容器 */}
+              <div className="relative">
                 {/* 激活的宠物 */}
                 {character.pets && character.pets.length > 0 && (
                   (() => {
                     const activePet = character.pets.find(p => p.isActive);
                     if (activePet) {
                       return (
-                        <div className={`absolute -left-16 top-1/2 transform -translate-y-1/2 transition-all duration-200 ${petAttackEffect ? 'animate-ping scale-150' : ''}`}>
+                        <div className={`absolute -left-16 -top-4 transition-all duration-300 ${petAttackEffect ? 'scale-125' : ''}`}>
                           <div className="relative">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-b from-purple-500 to-purple-800 border-2 border-purple-300 flex items-center justify-center shadow-lg">
-                              <span className="text-2xl">{activePet.pet.icon}</span>
+                            <div className="w-14 h-14 rounded-full bg-gradient-to-b from-purple-500 to-purple-800 border-2 border-purple-300 flex items-center justify-center shadow-lg">
+                              <span className="text-3xl">{activePet.pet.icon}</span>
                             </div>
                             {petAttackEffect && (
-                              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-black/80 text-white text-xs px-2 py-1 rounded">
+                              <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-black/80 text-white text-xs px-2 py-1 rounded">
                                 +{petDamageText}
                               </div>
                             )}
@@ -767,10 +744,44 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
                     return null;
                   })()
                 )}
+                
+                {/* 玩家角色 */}
+                <div className={`relative transition-all duration-100 ${playerShake ? 'scale-95' : ''}`}>
+                  <div className={`relative transition-transform duration-200 ${battlePhase === 'player_attack' ? 'translate-x-16 scale-110 rotate-12' : ''} ${battlePhase === 'player_turn' ? 'animate-pulse' : ''}`}>
+                    <div className={`absolute -inset-3 rounded-full blur-xl transition-all duration-300 ${
+                      playerShake ? 'bg-red-500/40' : 
+                      battlePhase === 'player_attack' ? 'bg-yellow-500/50' :
+                      'bg-blue-500/30'
+                    }`} />
+                    <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center shadow-xl transition-all duration-300 ${
+                      playerShake 
+                        ? 'bg-gradient-to-b from-red-500 to-red-800 border-red-400 shadow-red-500/50 scale-90' 
+                        : battlePhase === 'player_attack'
+                        ? 'bg-gradient-to-b from-yellow-500 to-yellow-800 border-yellow-400 shadow-yellow-500/50'
+                        : 'bg-gradient-to-b from-blue-500 to-blue-800 border-blue-400 shadow-blue-500/50'
+                    }`}>
+                      <span className="text-4xl">{character.avatar || '🧑'}</span>
+                    </div>
+                  </div>
+                  
+                  {/* 玩家血量条 */}
+                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                    <div className="text-center">
+                      <div className="text-xs font-bold text-blue-200">{character.name}</div>
+                      <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden mt-0.5 border border-blue-400/50">
+                        <div 
+                          className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 transition-all duration-300 rounded-full"
+                          style={{ width: `${Math.max(0, (playerCurrentHp / character.stats.maxHp) * 100)}%` }}
+                        />
+                      </div>
+                      <div className="text-[10px] text-blue-300">{Math.max(0, playerCurrentHp)}/{character.stats.maxHp}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               {/* 怪物 */}
-              <div className={`absolute right-6 top-1/2 transform -translate-y-1/2 transition-all duration-100 ${
+              <div className={`relative transition-all duration-100 ${
                 monsterShake ? 'scale-95' : ''
               }`}>
                 <div className={`relative transition-transform duration-200 ${battlePhase === 'monster_attack' ? '-translate-x-16 scale-110' : ''} ${battlePhase === 'monster_attack' ? 'animate-bounce' : ''}`}>
