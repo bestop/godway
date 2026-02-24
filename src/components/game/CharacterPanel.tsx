@@ -33,6 +33,11 @@ export function CharacterPanel({ character, inventory, onRestore, onMeditate }: 
     i && i.item && i.item.type === 'pill' && (i.item as any).effect === 'hp'
   ).reduce((sum, i) => sum + (i.quantity || 0), 0);
   
+  // 计算所有丹药数量
+  const allPills = inventory.filter(i => 
+    i && i.item && i.item.type === 'pill'
+  ).reduce((sum, i) => sum + (i.quantity || 0), 0);
+  
   // 渡劫丹数量（从角色属性中获取，因为使用后会转移到角色身上）
   const tribulationPillsInBag = character.tribulationPills;
   
@@ -202,7 +207,8 @@ export function CharacterPanel({ character, inventory, onRestore, onMeditate }: 
           {/* 物品快捷信息 */}
           <div className="flex items-center justify-between bg-slate-50 rounded-lg p-2 text-xs border border-slate-100">
             <div className="flex items-center gap-1 text-red-500">
-              💊 回血丹: <span className="font-bold">{hpPills}</span>
+              💊 丹药: <span className="font-bold">{allPills}</span>
+              <span className="text-slate-400">(回血:{hpPills})</span>
             </div>
             <div className="flex items-center gap-1 text-purple-500">
               📿 渡劫丹: <span className="font-bold">{tribulationPillsInBag}</span>

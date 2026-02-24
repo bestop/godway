@@ -501,7 +501,7 @@ export default function Home() {
 
           <div className="lg:col-span-3 space-y-4">
             <Tabs value={currentTab} onValueChange={(v) => setTab(v as GameTab)} className="w-full">
-              <TabsList className="grid grid-cols-10 bg-white border border-slate-200 shadow-sm h-auto">
+              <TabsList className="flex flex-wrap gap-1 bg-white border border-slate-200 shadow-sm h-auto p-1">
                 <TabsTrigger value="map" className="text-xs sm:text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700 py-2">
                   <Map className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">地图</span>
@@ -701,7 +701,9 @@ export default function Home() {
               </TabsContent>
             </Tabs>
 
-            <GameLog logs={logs} />
+            <div className="mt-4">
+              <GameLog logs={logs} />
+            </div>
           </div>
         </div>
       </main>

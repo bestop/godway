@@ -30,7 +30,9 @@ import {
 } from 'lucide-react';
 import {
   getPetQualityColor,
-  getPetTypeLabel
+  getPetTypeLabel,
+  getPetQualityBgColor,
+  getPetQualityBorderColor
 } from '@/lib/game/petData';
 
 interface PetPanelProps {
@@ -169,38 +171,60 @@ export function PetPanel({
                 <div className="space-y-2">
                   {(character.pets || []).map((pet) => {
                     const qualityColor = getPetQualityColor(pet.pet.quality);
+                    const qualityBgColor = getPetQualityBgColor(pet.pet.quality);
+                    const qualityBorderColor = getPetQualityBorderColor(pet.pet.quality);
                     const battleStats = getBattleStats(pet);
+                    const isLegendary = pet.pet.quality === 'legendary';
                     return (
                       <Card 
                         key={pet.pet.id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${pet.isActive ? 'ring-2 ring-green-500' : ''}`}
+                        className={`cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] ${
+                          pet.isActive ? 'ring-2 ring-green-500 shadow-green-200' : ''
+                        } ${qualityBgColor} border-2 ${qualityBorderColor}`}
                         onClick={() => setSelectedPet(pet)}
                       >
                         <CardContent className="p-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="text-4xl">{pet.pet.icon}</div>
+                              <div className={`text-4xl ${isLegendary ? 'animate-pulse' : ''}`}>
+                                {pet.pet.icon}
+                              </div>
                               <div>
                                 <div className="flex items-center gap-1">
-                                  <span className={`font-bold ${qualityColor}`}>
+                                  <span className={`font-bold ${qualityColor} ${isLegendary ? 'text-lg' : ''}`}>
                                     {pet.nickname || pet.pet.name}
                                   </span>
                                   {pet.isActive && (
-                                    <Badge className="bg-green-500 text-white">出战中</Badge>
+                                    <Badge className="bg-green-500 text-white animate-pulse">出战中</Badge>
+                                  )}
+                                  {isLegendary && (
+                                    <Badge className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white">传说</Badge>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-slate-600">
-                                  <Badge variant="outline">
+                                  <Badge variant="outline" className={qualityColor}>
                                     {pet.pet.level}级
                                   </Badge>
                                   <Badge variant="outline" className={qualityColor}>
                                     {getPetTypeLabel(pet.pet.type)}
                                   </Badge>
+                                  <Badge variant="outline" className={qualityColor}>
+                                    {pet.pet.quality === 'common' && '普通'}
+                                    {pet.pet.quality === 'uncommon' && '优秀'}
+                                    {pet.pet.quality === 'rare' && '稀有'}
+                                    {pet.pet.quality === 'epic' && '史诗'}
+                                    {pet.pet.quality === 'legendary' && '传说'}
+                                  </Badge>
                                 </div>
                               </div>
                             </div>
-                            <div className="text-sm text-slate-500">
-                              🩷 {battleStats.hp}
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-red-500">
+                                ❤️ {battleStats.hp}
+                              </div>
+                              <div className="text-xs text-orange-500">
+                                ⚔️ {battleStats.atk}
+                              </div>
                             </div>
                           </div>
                         </CardContent>
@@ -227,10 +251,14 @@ export function PetPanel({
                 {/* 基础信息 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="text-5xl">{selectedPet.pet.icon}</div>
+                    <div className={`text-5xl ${selectedPet.pet.quality === 'legendary' ? 'animate-pulse' : ''}`}>
+                      {selectedPet.pet.icon}
+                    </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xl font-bold ${getPetQualityColor(selectedPet.pet.quality)}`}>
+                        <span className={`text-xl font-bold ${getPetQualityColor(selectedPet.pet.quality)} ${
+                          selectedPet.pet.quality === 'legendary' ? 'text-2xl' : ''
+                        }`}>
                           {selectedPet.nickname || selectedPet.pet.name}
                         </span>
                         <Button 
@@ -246,6 +274,9 @@ export function PetPanel({
                           <Edit className="w-3 h-3 mr-1" />
                           重命名
                         </Button>
+                        {selectedPet.pet.quality === 'legendary' && (
+                          <Badge className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white animate-pulse">传说</Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge className={`${getPetQualityColor(selectedPet.pet.quality)} border-0`}>
@@ -269,7 +300,7 @@ export function PetPanel({
                   </div>
 
                   {/* 战斗状态 */}
-                  <Card className="bg-slate-50">
+                  <Card className={`bg-slate-50 ${selectedPet.pet.quality === 'legendary' ? 'border-orange-300 border-2' : ''}`}>
                     <CardContent className="p-3">
                       <div className="grid grid-cols-3 gap-2">
                         <div className="text-center">
@@ -309,28 +340,40 @@ export function PetPanel({
                 </div>
 
                 {/* 属性 */}
-                <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+                <Card className={`bg-gradient-to-r ${
+                  selectedPet.pet.quality === 'legendary' 
+                    ? 'from-orange-50 via-yellow-50 to-orange-50 border-orange-300 border-2' 
+                    : 'from-amber-50 to-orange-50 border-amber-200'
+                }`}>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="flex flex-col items-center">
                         <Heart className="w-5 h-5 text-red-500 mb-1" />
                         <div className="text-sm text-slate-500">气血</div>
-                        <div className="font-bold">{selectedPet.pet.stats.hp}</div>
+                        <div className={`font-bold ${selectedPet.pet.quality === 'legendary' ? 'text-xl text-red-600' : ''}`}>
+                          {selectedPet.pet.stats.hp}
+                        </div>
                       </div>
                       <div className="flex flex-col items-center">
                         <Sword className="w-5 h-5 text-orange-500 mb-1" />
                         <div className="text-sm text-slate-500">攻击</div>
-                        <div className="font-bold">{selectedPet.pet.stats.atk}</div>
+                        <div className={`font-bold ${selectedPet.pet.quality === 'legendary' ? 'text-xl text-orange-600' : ''}`}>
+                          {selectedPet.pet.stats.atk}
+                        </div>
                       </div>
                       <div className="flex flex-col items-center">
                         <Shield className="w-5 h-5 text-blue-500 mb-1" />
                         <div className="text-sm text-slate-500">防御</div>
-                        <div className="font-bold">{selectedPet.pet.stats.def}</div>
+                        <div className={`font-bold ${selectedPet.pet.quality === 'legendary' ? 'text-xl text-blue-600' : ''}`}>
+                          {selectedPet.pet.stats.def}
+                        </div>
                       </div>
                       <div className="flex flex-col items-center">
                         <Zap className="w-5 h-5 text-yellow-500 mb-1" />
                         <div className="text-sm text-slate-500">速度</div>
-                        <div className="font-bold">{selectedPet.pet.stats.speed}</div>
+                        <div className={`font-bold ${selectedPet.pet.quality === 'legendary' ? 'text-xl text-yellow-600' : ''}`}>
+                          {selectedPet.pet.stats.speed}
+                        </div>
                       </div>
                     </div>
                   </CardContent>

@@ -101,8 +101,8 @@ export function PetShop({ character, onBuyPet, addLog }: PetShopProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="max-h-[600px]">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ScrollArea className="h-[400px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4">
               {filteredPets.map((shopItem) => {
                 const petData = getPetById(shopItem.petId);
                 if (!petData) return null;
