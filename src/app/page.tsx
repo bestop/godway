@@ -109,6 +109,7 @@ export default function Home() {
     sellItem,
     buyFromMarket,
     buyNpcItem,
+    craftItem,
     doMeditate,
     doTribulation,
     restore,
@@ -638,6 +639,7 @@ export default function Home() {
                   onEquip={equip}
                   onUnequip={unequip}
                   onSellItem={sellItem}
+                  onCraftItem={craftItem}
                 />
               </TabsContent>
 

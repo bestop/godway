@@ -301,6 +301,9 @@ export function addExperience(
   let leveledUp = false;
   let newRealm = false;
   
+  // 更新总累计经验
+  const newTotalExp = (character.totalExp || 0) + exp;
+  
   // 检查是否升级
   while (currentExp >= character.expToNext && currentLevel < 9) {
     currentExp -= character.expToNext;
@@ -324,7 +327,8 @@ export function addExperience(
       ...character,
       exp: currentExp,
       level: currentLevel,
-      expToNext: calculateExpToNext(currentRealm, currentLevel)
+      expToNext: calculateExpToNext(currentRealm, currentLevel),
+      totalExp: newTotalExp
     },
     leveledUp,
     newLevel: currentLevel,
@@ -432,19 +436,26 @@ export function applyItem(
     message = result.message;
     if (result.success) {
       updatedCharacter = result.character;
+      // 从背包移除新装备
+      updatedInventory = removeFromInventory(updatedInventory, item.id, 1);
+      // 将旧装备放回背包
+      if (result.oldEquipment) {
+        updatedInventory = addToInventory(updatedInventory, result.oldEquipment, 1);
+      }
     }
-    // 不消耗装备
     return { character: updatedCharacter, inventory: updatedInventory, message };
   }
   
-  // 减少物品数量
-  updatedInventory = removeFromInventory(updatedInventory, item.id, actualQuantity);
+  // 减少物品数量（装备物品已经处理，不执行这里）
+  if (item.type !== 'equipment') {
+    updatedInventory = removeFromInventory(updatedInventory, item.id, actualQuantity);
+  }
   
   return { character: updatedCharacter, inventory: updatedInventory, message };
 }
 
 // 装备物品
-export function equipItem(character: Character, equipment: EquipmentItem): { success: boolean; message: string; character: Character } {
+export function equipItem(character: Character, equipment: EquipmentItem): { success: boolean; message: string; character: Character; oldEquipment: EquipmentItem | null } {
   const slot = equipment.equipmentType;
   const oldEquipment = character.equipment[slot];
   
@@ -456,7 +467,8 @@ export function equipItem(character: Character, equipment: EquipmentItem): { suc
       return { 
         success: false, 
         message: `境界不足，需要${equipment.requiredRealm}才能装备`, 
-        character 
+        character,
+        oldEquipment: null
       };
     }
   }
@@ -475,10 +487,10 @@ export function equipItem(character: Character, equipment: EquipmentItem): { suc
   
   let message = `装备了${equipment.name}`;
   if (oldEquipment) {
-    message += `，替换了${oldEquipment.name}`;
+    message += `，${oldEquipment.name}已放回背包`;
   }
   
-  return { success: true, message, character: updatedCharacter };
+  return { success: true, message, character: updatedCharacter, oldEquipment };
 }
 
 // 卸下装备

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Character, Monster, GameLogEntry, Skill, SKILLS } from '@/types/game';
+import { calculateSkillEffect } from '@/lib/game/gameEngine';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -223,11 +224,18 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
   
   // 使用技能
   const handleUseSkill = useCallback((skill: Skill) => {
-    if (!isBattling || battlePhase !== 'player_turn') return;
+    if (!isBattling || hasAttackedThisRound || battlePhase !== 'player_turn') return;
     if (playerCurrentMp < skill.mpCost) {
       addLog('battle', '灵力不足，无法使用技能！');
       return;
     }
+    
+    setHasAttackedThisRound(true);
+    
+    // 获取技能等级
+    const charSkill = character.skills?.find(s => s.skillId === skill.id);
+    const skillLevel = charSkill?.level || 1;
+    const levelBonus = (skillLevel - 1) * 10; // 计算等级加成百分比
     
     setIsWaitingForSkill(true);
     setCurrentSkill(skill);
@@ -262,12 +270,20 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
     // 消耗灵力
     setPlayerCurrentMp(prev => Math.max(0, prev - skill.mpCost));
     
-    // 计算技能效果
-    const skillDamage = skill.effect.damageMultiplier 
-      ? Math.floor(character.stats.atk * skill.effect.damageMultiplier)
-      : skill.effect.damage || 0;
+    // 计算技能效果（包含等级加成）
+    const skillEffect = calculateSkillEffect(skill, skillLevel);
+    const skillDamage = skillEffect.damageMultiplier 
+      ? Math.floor(character.stats.atk * skillEffect.damageMultiplier)
+      : skillEffect.damage || 0;
       
     setSkillDamageText(skillDamage);
+    
+    // 添加战斗日志 - 显示技能等级和加成
+    if (skillLevel > 1) {
+      addLog('battle', `使用${skill.name}（Lv.${skillLevel}，效果+${levelBonus}%）！`);
+    } else {
+      addLog('battle', `使用${skill.name}！`);
+    }
     
     // 播放技能动画
     setTimeout(() => {
@@ -290,10 +306,11 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
           return newHp;
         });
         setMonsterShake(true);
+        addLog('battle', `${skill.name}对${selectedMonster?.name}造成了${skillDamage}点伤害！`);
       } else if (skill.type === 'heal') {
-        const healAmount = skill.effect.healMultiplier 
-          ? Math.floor(character.stats.maxHp * skill.effect.healMultiplier)
-          : skill.effect.heal || 0;
+        const healAmount = skillEffect.healMultiplier 
+          ? Math.floor(character.stats.maxHp * skillEffect.healMultiplier)
+          : skillEffect.heal || 0;
         setPlayerCurrentHp(prev => {
           const newHp = Math.min(character.stats.maxHp, prev + healAmount);
           // 治疗时同步更新 character 的气血
@@ -308,6 +325,7 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
           }
           return newHp;
         });
+        addLog('battle', `${skill.name}恢复了${healAmount}点气血！`);
       }
       
       setTimeout(() => {
@@ -324,11 +342,13 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
           }
         }
         
-        // 回到玩家回合，可以继续使用技能或攻击
-        setBattlePhase('player_turn');
+        // 怪物攻击
+        setTimeout(() => {
+          monsterAttack();
+        }, 200);
       }, 300);
     }, 500);
-  }, [isBattling, battlePhase, playerCurrentMp, character, selectedMonster, monsterCurrentHp, onQuickBattle, addLog, setCharacter]);
+  }, [isBattling, hasAttackedThisRound, battlePhase, playerCurrentMp, character, selectedMonster, monsterCurrentHp, onQuickBattle, addLog, setCharacter, monsterAttack]);
   
   // 模拟战斗回合 - 超快速版，增加伤害倍数
   const simulateBattle = useCallback((monster: Monster) => {
@@ -907,7 +927,9 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
                   <div className="text-sm text-slate-400 mb-2 font-medium">技能</div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {availableSkills.map((skill) => {
-                      const canUse = playerCurrentMp >= skill.mpCost && battlePhase === 'player_turn';
+                      const charSkill = character.skills?.find(s => s.skillId === skill.id);
+                      const skillLevel = charSkill?.level || 1;
+                      const canUse = playerCurrentMp >= skill.mpCost && battlePhase === 'player_turn' && !hasAttackedThisRound;
                       return (
                         <Button
                           key={skill.id}
@@ -920,7 +942,10 @@ export function BattleArea({ character, battleLogs, onQuickBattle, addLog, isGod
                           }`}
                         >
                           <div className="flex flex-col items-center">
-                            <span className="text-lg">{skill.icon}</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-lg">{skill.icon}</span>
+                              <span className="text-[9px] bg-yellow-500/30 px-1 rounded text-yellow-300">Lv.{skillLevel}</span>
+                            </div>
                             <span className="text-[10px] mt-0.5">{skill.name}</span>
                             <span className="text-[9px] opacity-75">💫{skill.mpCost}</span>
                           </div>

@@ -18,7 +18,7 @@ import {
   Gem,
   Sword
 } from 'lucide-react';
-import { WEAPONS, ARMORS, ACCESSORIES, PILLS, TRIBULATION_PILLS } from '@/lib/game/gameData';
+import { WEAPONS, ARMORS, ACCESSORIES, PILLS, TRIBULATION_PILLS, MATERIALS } from '@/lib/game/gameData';
 
 interface MarketProps {
   character: Character;
@@ -68,8 +68,13 @@ export function Market({ character, market, playerId, onBuy, onBuyNpcItem }: Mar
 
   // NPC商店物品 - 根据玩家境界筛选可购买的装备
   const getAvailableWeapons = () => {
-    const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期'];
+    const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期', '渡劫期'];
     const currentIndex = realmOrder.indexOf(character.realm);
+    
+    // 如果找不到角色境界，就显示所有装备
+    if (currentIndex === -1) {
+      return WEAPONS;
+    }
     
     return WEAPONS.filter(weapon => {
       const requiredIndex = realmOrder.indexOf(weapon.requiredRealm || '练气期');
@@ -79,8 +84,13 @@ export function Market({ character, market, playerId, onBuy, onBuyNpcItem }: Mar
   };
 
   const getAvailableArmors = () => {
-    const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期'];
+    const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期', '渡劫期'];
     const currentIndex = realmOrder.indexOf(character.realm);
+    
+    // 如果找不到角色境界，就显示所有装备
+    if (currentIndex === -1) {
+      return ARMORS;
+    }
     
     return ARMORS.filter(armor => {
       const requiredIndex = realmOrder.indexOf(armor.requiredRealm || '练气期');
@@ -89,8 +99,13 @@ export function Market({ character, market, playerId, onBuy, onBuyNpcItem }: Mar
   };
 
   const getAvailableAccessories = () => {
-    const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期'];
+    const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期', '渡劫期'];
     const currentIndex = realmOrder.indexOf(character.realm);
+    
+    // 如果找不到角色境界，就显示所有装备
+    if (currentIndex === -1) {
+      return ACCESSORIES;
+    }
     
     return ACCESSORIES.filter(accessory => {
       const requiredIndex = realmOrder.indexOf(accessory.requiredRealm || '练气期');
@@ -426,6 +441,53 @@ export function Market({ character, market, playerId, onBuy, onBuyNpcItem }: Mar
                                   disabled={!canAfford}
                                   className={`mt-1 text-white text-xs ${canAfford 
                                     ? 'bg-amber-500 hover:bg-amber-600' 
+                                    : 'bg-slate-300 cursor-not-allowed'
+                                  }`}
+                                >
+                                  购买
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 材料 */}
+                  <div>
+                    <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2">
+                      <span className="text-lg">🪨</span> 材料
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {MATERIALS.map(material => {
+                        const rarityMultiplier: Record<string, number> = {
+                          'common': 1,
+                          'fine': 3,
+                          'rare': 10,
+                          'epic': 50,
+                          'legendary': 200
+                        };
+                        const price = 100 * (rarityMultiplier[material.rarity] || 1);
+                        const canAfford = character.gold >= price;
+                        return (
+                          <div key={material.id} className="p-3 rounded-lg border bg-cyan-50 border-cyan-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl">{material.icon}</span>
+                                <div>
+                                  <div className={`font-bold ${QualityColors[material.rarity]}`}>{material.name}</div>
+                                  <div className="text-xs text-slate-500">{material.description}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-amber-600 font-bold">{price.toLocaleString()}</div>
+                                <Button 
+                                  size="sm"
+                                  onClick={() => handleBuyNpcItem(material, price)}
+                                  disabled={!canAfford}
+                                  className={`mt-1 text-white text-xs ${canAfford 
+                                    ? 'bg-cyan-500 hover:bg-cyan-600' 
                                     : 'bg-slate-300 cursor-not-allowed'
                                   }`}
                                 >

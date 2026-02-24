@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Character, InventoryItem, GameItem, EquipmentItem, PillItem } from '@/types/game';
+import { Character, InventoryItem, GameItem, EquipmentItem, PillItem, MaterialItem } from '@/types/game';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +18,10 @@ import {
   Shield, 
   Gem,
   Coins,
-  X
+  X,
+  Hammer
 } from 'lucide-react';
+import { getRecipesByMaterial, CraftingRecipe, getRandomEquipmentByQualityAndType } from '@/lib/game/gameData';
 
 interface InventoryProps {
   character: Character;
@@ -28,6 +30,7 @@ interface InventoryProps {
   onEquip: (item: GameItem) => void;
   onUnequip: (slot: 'weapon' | 'armor' | 'accessory') => void;
   onSellItem: (item: GameItem, price: number) => void;
+  onCraftItem?: (recipe: CraftingRecipe) => void;
 }
 
 export function Inventory({ 
@@ -36,10 +39,12 @@ export function Inventory({
   onUseItem, 
   onEquip, 
   onUnequip, 
-  onSellItem 
+  onSellItem,
+  onCraftItem 
 }: InventoryProps) {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [sellDialogOpen, setSellDialogOpen] = useState(false);
+  const [craftDialogOpen, setCraftDialogOpen] = useState(false);
   const [sellPrice, setSellPrice] = useState('100');
   const [useQuantity, setUseQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('all');
@@ -294,6 +299,16 @@ export function Inventory({
                       装备
                     </Button>
                   )}
+                  {selectedItem.item.type === 'material' && onCraftItem && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => setCraftDialogOpen(true)}
+                      className="bg-purple-500 hover:bg-purple-600 text-white"
+                    >
+                      <Hammer className="w-4 h-4 mr-1" />
+                      炼制
+                    </Button>
+                  )}
                   <Button 
                     size="sm" 
                     variant="outline"
@@ -358,6 +373,78 @@ export function Inventory({
             </Button>
             <Button onClick={handleSell} className="bg-amber-500 hover:bg-amber-600 text-white">
               确认出售
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 炼制对话框 */}
+      <Dialog open={craftDialogOpen} onOpenChange={setCraftDialogOpen}>
+        <DialogContent className="bg-white border-slate-200 text-slate-800">
+          <DialogHeader>
+            <DialogTitle>炼制装备</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              使用材料炼制装备
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-3 mb-4">
+              {selectedItem && (
+                <>
+                  <span className="text-2xl">{selectedItem.item.icon}</span>
+                  <div>
+                    <div className={`font-medium ${getItemQualityColor(selectedItem.item)}`}>
+                      {selectedItem.item.name}
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      持有数量: {selectedItem.quantity}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="space-y-3">
+              {selectedItem && getRecipesByMaterial(selectedItem.item.id).map(recipe => {
+                const canCraft = selectedItem.quantity >= recipe.materialCount;
+                return (
+                  <div 
+                    key={recipe.id}
+                    className={`p-3 rounded-lg border ${canCraft ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-slate-800">{recipe.name}</div>
+                        <div className="text-xs text-slate-500">
+                          {recipe.description}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          需要: {recipe.materialCount}个材料
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={!canCraft || !onCraftItem}
+                        onClick={() => {
+                          if (onCraftItem) {
+                            onCraftItem(recipe);
+                            setCraftDialogOpen(false);
+                            setSelectedItem(null);
+                          }
+                        }}
+                        className={canCraft ? 'bg-purple-500 hover:bg-purple-600 text-white' : 'bg-slate-300 cursor-not-allowed'}
+                      >
+                        <Hammer className="w-4 h-4 mr-1" />
+                        炼制
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCraftDialogOpen(false)} className="text-slate-600">
+              取消
             </Button>
           </DialogFooter>
         </DialogContent>

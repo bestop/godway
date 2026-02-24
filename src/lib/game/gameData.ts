@@ -17,23 +17,14 @@ export const PILLS: PillItem[] = [
     id: 'pill_hp_small',
     name: '回气丹',
     type: 'pill',
-    description: '恢复50点气血',
+    description: '恢复100点气血',
     icon: '💊',
     effect: 'hp',
-    value: 50
+    value: 100
   },
   {
     id: 'pill_hp_medium',
     name: '回血丹',
-    type: 'pill',
-    description: '恢复150点气血',
-    icon: '💊',
-    effect: 'hp',
-    value: 150
-  },
-  {
-    id: 'pill_hp_large',
-    name: '复元丹',
     type: 'pill',
     description: '恢复500点气血',
     icon: '💊',
@@ -41,35 +32,35 @@ export const PILLS: PillItem[] = [
     value: 500
   },
   {
+    id: 'pill_hp_large',
+    name: '复元丹',
+    type: 'pill',
+    description: '恢复2000点气血',
+    icon: '💊',
+    effect: 'hp',
+    value: 2000
+  },
+  {
     id: 'pill_mp_small',
     name: '聚灵丹',
     type: 'pill',
-    description: '恢复30点灵力',
+    description: '恢复60点灵力',
     icon: '💊',
     effect: 'mp',
-    value: 30
+    value: 60
   },
   {
     id: 'pill_mp_large',
     name: '凝神丹',
     type: 'pill',
-    description: '恢复100点灵力',
+    description: '恢复400点灵力',
     icon: '💊',
     effect: 'mp',
-    value: 100
+    value: 400
   },
   {
     id: 'pill_exp_small',
     name: '精元丹',
-    type: 'pill',
-    description: '增加100点经验',
-    icon: '🌟',
-    effect: 'exp',
-    value: 100
-  },
-  {
-    id: 'pill_exp_medium',
-    name: '悟道丹',
     type: 'pill',
     description: '增加500点经验',
     icon: '🌟',
@@ -77,27 +68,27 @@ export const PILLS: PillItem[] = [
     value: 500
   },
   {
+    id: 'pill_exp_medium',
+    name: '悟道丹',
+    type: 'pill',
+    description: '增加3000点经验',
+    icon: '🌟',
+    effect: 'exp',
+    value: 3000
+  },
+  {
     id: 'pill_exp_large',
     name: '天灵丹',
     type: 'pill',
-    description: '增加2000点经验',
+    description: '增加15000点经验',
     icon: '🌟',
     effect: 'exp',
-    value: 2000
+    value: 15000
   },
   // 永久提升丹药
   {
     id: 'pill_maxhp_small',
     name: '壮骨丹',
-    type: 'pill',
-    description: '永久增加20点最大气血',
-    icon: '❤️',
-    effect: 'maxHp',
-    value: 20
-  },
-  {
-    id: 'pill_maxhp_medium',
-    name: '固元丹',
     type: 'pill',
     description: '永久增加50点最大气血',
     icon: '❤️',
@@ -105,40 +96,49 @@ export const PILLS: PillItem[] = [
     value: 50
   },
   {
+    id: 'pill_maxhp_medium',
+    name: '固元丹',
+    type: 'pill',
+    description: '永久增加200点最大气血',
+    icon: '❤️',
+    effect: 'maxHp',
+    value: 200
+  },
+  {
     id: 'pill_maxhp_large',
     name: '龙血丹',
     type: 'pill',
-    description: '永久增加120点最大气血',
+    description: '永久增加800点最大气血',
     icon: '❤️',
     effect: 'maxHp',
-    value: 120
+    value: 800
   },
   {
     id: 'pill_maxmp_small',
     name: '灵心丹',
     type: 'pill',
-    description: '永久增加15点最大灵力',
+    description: '永久增加30点最大灵力',
     icon: '💫',
     effect: 'maxMp',
-    value: 15
+    value: 30
   },
   {
     id: 'pill_maxmp_medium',
     name: '清灵丹',
     type: 'pill',
-    description: '永久增加40点最大灵力',
+    description: '永久增加150点最大灵力',
     icon: '💫',
     effect: 'maxMp',
-    value: 40
+    value: 150
   },
   {
     id: 'pill_maxmp_large',
     name: '天灵玄丹',
     type: 'pill',
-    description: '永久增加100点最大灵力',
+    description: '永久增加600点最大灵力',
     icon: '💫',
     effect: 'maxMp',
-    value: 100
+    value: 600
   },
   // 技能丹药
   {
@@ -154,19 +154,19 @@ export const PILLS: PillItem[] = [
     id: 'pill_skill_medium',
     name: '通玄丹',
     type: 'pill',
-    description: '技能熟练度+3',
+    description: '技能熟练度+5',
     icon: '📖',
     effect: 'skill',
-    value: 3
+    value: 5
   },
   {
     id: 'pill_skill_large',
     name: '天悟丹',
     type: 'pill',
-    description: '技能熟练度+10',
+    description: '技能熟练度+20',
     icon: '📖',
     effect: 'skill',
-    value: 10
+    value: 20
   }
 ];
 
@@ -227,7 +227,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'fine',
     description: '剑身流转光芒，筑基期利器',
     icon: '⚔️',
-    stats: { atk: 35 },
+    stats: { atk: 50 },
     requiredRealm: '筑基期'
   },
   {
@@ -238,7 +238,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'rare',
     description: '玄铁铸造，重达千斤',
     icon: '⚔️',
-    stats: { atk: 55 },
+    stats: { atk: 100 },
     requiredRealm: '筑基期'
   },
   {
@@ -249,7 +249,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'epic',
     description: '蕴含雷电之力，威力惊人',
     icon: '⚡',
-    stats: { atk: 80, mp: 20 },
+    stats: { atk: 200, mp: 50 },
     requiredRealm: '筑基期'
   },
   // 金丹期武器
@@ -261,7 +261,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'rare',
     description: '金光闪闪，锋芒毕露',
     icon: '✨',
-    stats: { atk: 100 },
+    stats: { atk: 400 },
     requiredRealm: '金丹期'
   },
   {
@@ -272,7 +272,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'epic',
     description: '蕴含星辰之力的神剑',
     icon: '💫',
-    stats: { atk: 150, mp: 50 },
+    stats: { atk: 800, mp: 150 },
     requiredRealm: '金丹期'
   },
   {
@@ -283,7 +283,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'legendary',
     description: '传说中的神剑，九天玄铁打造',
     icon: '🌟',
-    stats: { atk: 220, mp: 80, hp: 100 },
+    stats: { atk: 1500, mp: 300, hp: 300 },
     requiredRealm: '金丹期'
   },
   // 元婴期武器
@@ -295,7 +295,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'epic',
     description: '元婴境界方可驾驭的宝剑',
     icon: '🗡️',
-    stats: { atk: 250, mp: 100 },
+    stats: { atk: 3000, mp: 500 },
     requiredRealm: '元婴期'
   },
   {
@@ -306,7 +306,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'legendary',
     description: '可穿梭虚空的神秘之剑',
     icon: '🌀',
-    stats: { atk: 350, mp: 150, hp: 200 },
+    stats: { atk: 6000, mp: 800, hp: 800 },
     requiredRealm: '元婴期'
   },
   // 化神期武器
@@ -318,7 +318,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'legendary',
     description: '化神境界的至宝',
     icon: '⚡',
-    stats: { atk: 500, mp: 200, hp: 300 },
+    stats: { atk: 15000, mp: 1500, hp: 2000 },
     requiredRealm: '化神期'
   },
   // 合体期武器
@@ -330,7 +330,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'legendary',
     description: '合体期的无上神兵',
     icon: '🔥',
-    stats: { atk: 800, mp: 300, hp: 500 },
+    stats: { atk: 40000, mp: 3000, hp: 5000 },
     requiredRealm: '合体期'
   },
   // 大乘期武器
@@ -342,7 +342,7 @@ export const WEAPONS: EquipmentItem[] = [
     quality: 'legendary',
     description: '蕴含天道之力的至高神剑',
     icon: '👑',
-    stats: { atk: 1200, mp: 500, hp: 800 },
+    stats: { atk: 100000, mp: 8000, hp: 15000 },
     requiredRealm: '大乘期'
   }
 ];
@@ -369,7 +369,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'fine',
     description: '兽皮制成的护甲',
     icon: '🥋',
-    stats: { def: 8 },
+    stats: { def: 10 },
     requiredRealm: '练气期'
   },
   {
@@ -380,7 +380,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'rare',
     description: '蕴含灵气的道袍',
     icon: '👘',
-    stats: { def: 18, hp: 30 },
+    stats: { def: 25, hp: 50 },
     requiredRealm: '练气期'
   },
   // 筑基期防具
@@ -392,7 +392,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'fine',
     description: '玄铁打造的护甲',
     icon: '🛡️',
-    stats: { def: 30, hp: 50 },
+    stats: { def: 60, hp: 100 },
     requiredRealm: '筑基期'
   },
   {
@@ -403,7 +403,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'rare',
     description: '紫色云纹装饰的护甲',
     icon: '🛡️',
-    stats: { def: 50, hp: 80 },
+    stats: { def: 120, hp: 200 },
     requiredRealm: '筑基期'
   },
   {
@@ -414,7 +414,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'epic',
     description: '蕴含雷电之力的护甲',
     icon: '⚡',
-    stats: { def: 75, hp: 120, mp: 30 },
+    stats: { def: 200, hp: 300, mp: 80 },
     requiredRealm: '筑基期'
   },
   // 金丹期防具
@@ -426,7 +426,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'rare',
     description: '金丹境界的法袍',
     icon: '✨',
-    stats: { def: 100, hp: 150 },
+    stats: { def: 400, hp: 500 },
     requiredRealm: '金丹期'
   },
   {
@@ -437,7 +437,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'epic',
     description: '蕴含星辰之力的铠甲',
     icon: '💫',
-    stats: { def: 150, hp: 200, mp: 50 },
+    stats: { def: 700, hp: 800, mp: 150 },
     requiredRealm: '金丹期'
   },
   {
@@ -448,7 +448,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'legendary',
     description: '传说中的神甲',
     icon: '🌟',
-    stats: { def: 220, hp: 350, mp: 100 },
+    stats: { def: 1200, hp: 1200, mp: 300 },
     requiredRealm: '金丹期'
   },
   // 元婴期防具
@@ -460,7 +460,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'epic',
     description: '元婴境界的法宝',
     icon: '🛡️',
-    stats: { def: 280, hp: 400, mp: 120 },
+    stats: { def: 2500, hp: 1500, mp: 400 },
     requiredRealm: '元婴期'
   },
   {
@@ -471,7 +471,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'legendary',
     description: '可抵御虚空之力的神秘铠甲',
     icon: '🌀',
-    stats: { def: 400, hp: 600, mp: 200 },
+    stats: { def: 4500, hp: 2500, mp: 600 },
     requiredRealm: '元婴期'
   },
   // 化神期防具
@@ -483,7 +483,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'legendary',
     description: '化神境界的至宝',
     icon: '⚡',
-    stats: { def: 600, hp: 800, mp: 300 },
+    stats: { def: 10000, hp: 4000, mp: 1000 },
     requiredRealm: '化神期'
   },
   // 合体期防具
@@ -495,7 +495,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'legendary',
     description: '合体期的无上防御',
     icon: '🔥',
-    stats: { def: 900, hp: 1200, mp: 450 },
+    stats: { def: 25000, hp: 8000, mp: 2000 },
     requiredRealm: '合体期'
   },
   // 大乘期防具
@@ -507,7 +507,7 @@ export const ARMORS: EquipmentItem[] = [
     quality: 'legendary',
     description: '蕴含天道之力的至高法袍',
     icon: '👑',
-    stats: { def: 1500, hp: 2000, mp: 800 },
+    stats: { def: 60000, hp: 20000, mp: 5000 },
     requiredRealm: '大乘期'
   }
 ];
@@ -523,7 +523,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'common',
     description: '蕴含微弱灵气的石头',
     icon: '💎',
-    stats: { hp: 20 },
+    stats: { hp: 50 },
     requiredRealm: '练气期'
   },
   {
@@ -534,7 +534,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'fine',
     description: '温润的玉佩',
     icon: '📿',
-    stats: { hp: 40, mp: 15 },
+    stats: { hp: 100, mp: 40 },
     requiredRealm: '练气期'
   },
   {
@@ -545,7 +545,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'rare',
     description: '蕴含灵气的玉佩',
     icon: '📿',
-    stats: { hp: 80, mp: 30 },
+    stats: { hp: 200, mp: 80 },
     requiredRealm: '练气期'
   },
   // 筑基期饰品
@@ -557,7 +557,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'fine',
     description: '筑基期修士常用饰品',
     icon: '💎',
-    stats: { hp: 100, mp: 40 },
+    stats: { hp: 300, mp: 100 },
     requiredRealm: '筑基期'
   },
   {
@@ -568,7 +568,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'rare',
     description: '紫色云纹玉佩',
     icon: '📿',
-    stats: { hp: 150, mp: 60 },
+    stats: { hp: 500, mp: 180 },
     requiredRealm: '筑基期'
   },
   {
@@ -579,7 +579,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'epic',
     description: '蕴含雷电之力的宝珠',
     icon: '⚡',
-    stats: { hp: 200, mp: 100 },
+    stats: { hp: 800, mp: 300 },
     requiredRealm: '筑基期'
   },
   // 金丹期饰品
@@ -591,7 +591,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'rare',
     description: '金丹境界的宝物',
     icon: '✨',
-    stats: { hp: 250, mp: 120 },
+    stats: { hp: 1200, mp: 400 },
     requiredRealm: '金丹期'
   },
   {
@@ -602,7 +602,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'epic',
     description: '蕴含星辰之力的宝珠',
     icon: '💫',
-    stats: { hp: 350, mp: 180 },
+    stats: { hp: 2000, mp: 600 },
     requiredRealm: '金丹期'
   },
   {
@@ -613,7 +613,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'legendary',
     description: '传说中的神玉',
     icon: '🌟',
-    stats: { hp: 500, mp: 280 },
+    stats: { hp: 3500, mp: 1000 },
     requiredRealm: '金丹期'
   },
   // 元婴期饰品
@@ -625,7 +625,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'epic',
     description: '元婴境界的法宝',
     icon: '💎',
-    stats: { hp: 600, mp: 350 },
+    stats: { hp: 6000, mp: 1200 },
     requiredRealm: '元婴期'
   },
   {
@@ -636,7 +636,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'legendary',
     description: '可穿梭虚空的神秘玉石',
     icon: '🌀',
-    stats: { hp: 900, mp: 500 },
+    stats: { hp: 10000, mp: 2000 },
     requiredRealm: '元婴期'
   },
   // 化神期饰品
@@ -648,7 +648,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'legendary',
     description: '化神境界的至宝',
     icon: '⚡',
-    stats: { hp: 1200, mp: 700 },
+    stats: { hp: 20000, mp: 3500 },
     requiredRealm: '化神期'
   },
   // 合体期饰品
@@ -660,7 +660,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'legendary',
     description: '合体期的无上宝物',
     icon: '🔥',
-    stats: { hp: 1800, mp: 1000 },
+    stats: { hp: 50000, mp: 6000 },
     requiredRealm: '合体期'
   },
   // 大乘期饰品
@@ -672,7 +672,7 @@ export const ACCESSORIES: EquipmentItem[] = [
     quality: 'legendary',
     description: '蕴含天道之力的至高宝物',
     icon: '👑',
-    stats: { hp: 3000, mp: 1500 },
+    stats: { hp: 120000, mp: 15000 },
     requiredRealm: '大乘期'
   }
 ];
@@ -683,7 +683,7 @@ export const MATERIALS: MaterialItem[] = [
     id: 'material_iron',
     name: '玄铁矿',
     type: 'material',
-    description: '锻造装备的基础材料',
+    description: '锻造装备的基础材料，可用于炼制普通武器和防具',
     icon: '🪨',
     rarity: 'common'
   },
@@ -691,7 +691,7 @@ export const MATERIALS: MaterialItem[] = [
     id: 'material_crystal',
     name: '灵晶',
     type: 'material',
-    description: '蕴含灵气的晶石',
+    description: '蕴含灵气的晶石，可用于炼制精良品质装备和饰品',
     icon: '💎',
     rarity: 'fine'
   },
@@ -699,7 +699,7 @@ export const MATERIALS: MaterialItem[] = [
     id: 'material_jade',
     name: '灵玉',
     type: 'material',
-    description: '高品质的灵玉',
+    description: '高品质的灵玉，可用于炼制稀有品质装备和饰品',
     icon: '📿',
     rarity: 'rare'
   },
@@ -707,7 +707,7 @@ export const MATERIALS: MaterialItem[] = [
     id: 'material_essence',
     name: '妖丹',
     type: 'material',
-    description: '妖兽体内的内丹',
+    description: '妖兽体内的内丹，可用于炼制史诗品质装备和饰品',
     icon: '🔮',
     rarity: 'epic'
   },
@@ -715,7 +715,7 @@ export const MATERIALS: MaterialItem[] = [
     id: 'material_soul',
     name: '天魂石',
     type: 'material',
-    description: '蕴含天道的神秘石头',
+    description: '蕴含天道的神秘石头，可用于炼制传说品质装备和饰品',
     icon: '🌟',
     rarity: 'legendary'
   }
@@ -1654,6 +1654,186 @@ export const MONSTERS: Monster[] = [
 // 根据境界获取怪物列表
 export function getMonstersByRealm(realm: RealmType): Monster[] {
   return MONSTERS.filter(m => m.realm === realm);
+}
+
+// 炼制配方
+export interface CraftingRecipe {
+  id: string;
+  name: string;
+  description: string;
+  requiredMaterialId: string;
+  materialCount: number;
+  equipmentType: 'weapon' | 'armor' | 'accessory';
+  targetQuality: ItemQuality;
+}
+
+export const CRAFTING_RECIPES: CraftingRecipe[] = [
+  // 普通品质装备炼制
+  {
+    id: 'craft_weapon_common',
+    name: '炼制普通武器',
+    description: '使用玄铁矿炼制一件普通品质的武器',
+    requiredMaterialId: 'material_iron',
+    materialCount: 3,
+    equipmentType: 'weapon',
+    targetQuality: 'common'
+  },
+  {
+    id: 'craft_armor_common',
+    name: '炼制普通防具',
+    description: '使用玄铁矿炼制一件普通品质的防具',
+    requiredMaterialId: 'material_iron',
+    materialCount: 3,
+    equipmentType: 'armor',
+    targetQuality: 'common'
+  },
+  {
+    id: 'craft_accessory_common',
+    name: '炼制普通饰品',
+    description: '使用玄铁矿炼制一件普通品质的饰品',
+    requiredMaterialId: 'material_iron',
+    materialCount: 3,
+    equipmentType: 'accessory',
+    targetQuality: 'common'
+  },
+  // 精良品质装备炼制
+  {
+    id: 'craft_weapon_fine',
+    name: '炼制精良武器',
+    description: '使用灵晶炼制一件精良品质的武器',
+    requiredMaterialId: 'material_crystal',
+    materialCount: 3,
+    equipmentType: 'weapon',
+    targetQuality: 'fine'
+  },
+  {
+    id: 'craft_armor_fine',
+    name: '炼制精良防具',
+    description: '使用灵晶炼制一件精良品质的防具',
+    requiredMaterialId: 'material_crystal',
+    materialCount: 3,
+    equipmentType: 'armor',
+    targetQuality: 'fine'
+  },
+  {
+    id: 'craft_accessory_fine',
+    name: '炼制精良饰品',
+    description: '使用灵晶炼制一件精良品质的饰品',
+    requiredMaterialId: 'material_crystal',
+    materialCount: 3,
+    equipmentType: 'accessory',
+    targetQuality: 'fine'
+  },
+  // 稀有品质装备炼制
+  {
+    id: 'craft_weapon_rare',
+    name: '炼制稀有武器',
+    description: '使用灵玉炼制一件稀有品质的武器',
+    requiredMaterialId: 'material_jade',
+    materialCount: 3,
+    equipmentType: 'weapon',
+    targetQuality: 'rare'
+  },
+  {
+    id: 'craft_armor_rare',
+    name: '炼制稀有防具',
+    description: '使用灵玉炼制一件稀有品质的防具',
+    requiredMaterialId: 'material_jade',
+    materialCount: 3,
+    equipmentType: 'armor',
+    targetQuality: 'rare'
+  },
+  {
+    id: 'craft_accessory_rare',
+    name: '炼制稀有饰品',
+    description: '使用灵玉炼制一件稀有品质的饰品',
+    requiredMaterialId: 'material_jade',
+    materialCount: 3,
+    equipmentType: 'accessory',
+    targetQuality: 'rare'
+  },
+  // 史诗品质装备炼制
+  {
+    id: 'craft_weapon_epic',
+    name: '炼制史诗武器',
+    description: '使用妖丹炼制一件史诗品质的武器',
+    requiredMaterialId: 'material_essence',
+    materialCount: 3,
+    equipmentType: 'weapon',
+    targetQuality: 'epic'
+  },
+  {
+    id: 'craft_armor_epic',
+    name: '炼制史诗防具',
+    description: '使用妖丹炼制一件史诗品质的防具',
+    requiredMaterialId: 'material_essence',
+    materialCount: 3,
+    equipmentType: 'armor',
+    targetQuality: 'epic'
+  },
+  {
+    id: 'craft_accessory_epic',
+    name: '炼制史诗饰品',
+    description: '使用妖丹炼制一件史诗品质的饰品',
+    requiredMaterialId: 'material_essence',
+    materialCount: 3,
+    equipmentType: 'accessory',
+    targetQuality: 'epic'
+  },
+  // 传说品质装备炼制
+  {
+    id: 'craft_weapon_legendary',
+    name: '炼制传说武器',
+    description: '使用天魂石炼制一件传说品质的武器',
+    requiredMaterialId: 'material_soul',
+    materialCount: 3,
+    equipmentType: 'weapon',
+    targetQuality: 'legendary'
+  },
+  {
+    id: 'craft_armor_legendary',
+    name: '炼制传说防具',
+    description: '使用天魂石炼制一件传说品质的防具',
+    requiredMaterialId: 'material_soul',
+    materialCount: 3,
+    equipmentType: 'armor',
+    targetQuality: 'legendary'
+  },
+  {
+    id: 'craft_accessory_legendary',
+    name: '炼制传说饰品',
+    description: '使用天魂石炼制一件传说品质的饰品',
+    requiredMaterialId: 'material_soul',
+    materialCount: 3,
+    equipmentType: 'accessory',
+    targetQuality: 'legendary'
+  }
+];
+
+// 根据材料获取可用的炼制配方
+export function getRecipesByMaterial(materialId: string): CraftingRecipe[] {
+  return CRAFTING_RECIPES.filter(recipe => recipe.requiredMaterialId === materialId);
+}
+
+// 获取指定品质和类型的装备
+export function getRandomEquipmentByQualityAndType(quality: ItemQuality, equipmentType: 'weapon' | 'armor' | 'accessory', playerRealm: RealmType): EquipmentItem | null {
+  let equipmentList: EquipmentItem[] = [];
+  
+  if (equipmentType === 'weapon') {
+    equipmentList = WEAPONS;
+  } else if (equipmentType === 'armor') {
+    equipmentList = ARMORS;
+  } else {
+    equipmentList = ACCESSORIES;
+  }
+
+  // 筛选指定品质的装备
+  const filtered = equipmentList.filter(eq => eq.quality === quality);
+  
+  if (filtered.length === 0) return null;
+  
+  // 随机选择一件
+  return filtered[Math.floor(Math.random() * filtered.length)];
 }
 
 // 根据境界和层数获取推荐的怪物

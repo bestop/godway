@@ -6,7 +6,7 @@ import {
   Character,
   InventoryItem
 } from '@/types/game';
-import { getItemById } from './gameData';
+import { getItemById, WEAPONS, ARMORS, ACCESSORIES } from './gameData';
 import { addToInventory, addExperience, calculateStatsWithEquipment } from './gameEngine';
 
 export const CHEAT_CODES: CheatCode[] = [
@@ -115,14 +115,19 @@ export function executeCheatCode(
     case 'gold':
       const goldAmount = cheat.params?.amount || 10000;
       updatedCharacter.gold += goldAmount;
+      let goldMessage = `💰 ${cheat.name}！获得 ${goldAmount.toLocaleString()} 金币！`;
       if (cheat.params?.exp) {
         const expResult = addExperience(updatedCharacter, cheat.params.exp);
         updatedCharacter = expResult.character;
+        goldMessage += ` 获得 ${(cheat.params.exp as number).toLocaleString()} 经验！`;
+        if (expResult.leveledUp) {
+          goldMessage += '升级了！';
+        }
       }
       return {
         result: {
           success: true,
-          message: `💰 ${cheat.name}！获得 ${goldAmount.toLocaleString()} 金币！`,
+          message: goldMessage,
           effect
         },
         character: updatedCharacter,
@@ -223,28 +228,51 @@ export function executeCheatCode(
       };
 
     case 'add_item':
-      const itemIds = cheat.params?.items || [];
-      const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期'];
-      const realmIndex = realmOrder.indexOf(character.realm);
+      const itemTypes = cheat.params?.items || [];
+      const realmOrder = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期', '渡劫期'];
+      const realmIndex = Math.max(0, realmOrder.indexOf(character.realm));
+      const actualRealmIndex = Math.min(realmIndex, 6); // 装备最多到大乘期
       
-      itemIds.forEach((type: string) => {
-        let itemId = '';
+      itemTypes.forEach((type: string) => {
+        let equipmentList;
         if (type === 'weapon') {
-          itemId = `weapon_${['qi', 'zhuji', 'jindan', 'yuanying', 'huashen', 'heti', 'dacheng'][realmIndex]}_3`;
+          equipmentList = WEAPONS;
         } else if (type === 'armor') {
-          itemId = `armor_${['qi', 'zhuji', 'jindan', 'yuanying', 'huashen', 'heti', 'dacheng'][realmIndex]}_3`;
+          equipmentList = ARMORS;
         } else if (type === 'accessory') {
-          itemId = `accessory_${['qi', 'zhuji', 'jindan', 'yuanying', 'huashen', 'heti', 'dacheng'][realmIndex]}_3`;
+          equipmentList = ACCESSORIES;
+        } else {
+          return;
         }
-        const item = getItemById(itemId);
-        if (item) {
-          updatedInventory = addToInventory(updatedInventory, item, 1);
+        
+        // 获取对应境界的装备
+        const realmNames = ['练气期', '筑基期', '金丹期', '元婴期', '化神期', '合体期', '大乘期'];
+        const targetRealm = realmNames[actualRealmIndex];
+        const realmEquipments = equipmentList.filter(e => e.requiredRealm === targetRealm);
+        
+        if (realmEquipments.length > 0) {
+          // 优先选择传说品质，否则选史诗，否则选稀有
+          let selectedEquip = realmEquipments.find(e => e.quality === 'legendary');
+          if (!selectedEquip) {
+            selectedEquip = realmEquipments.find(e => e.quality === 'epic');
+          }
+          if (!selectedEquip) {
+            selectedEquip = realmEquipments.find(e => e.quality === 'rare');
+          }
+          if (!selectedEquip) {
+            selectedEquip = realmEquipments[realmEquipments.length - 1]; // 选最后一个
+          }
+          
+          if (selectedEquip) {
+            updatedInventory = addToInventory(updatedInventory, selectedEquip, 1);
+          }
         }
       });
+      
       return {
         result: {
           success: true,
-          message: `🎁 ${cheat.name}！获得当前境界全套传说装备！`,
+          message: `🎁 ${cheat.name}！获得当前境界全套装备！`,
           effect
         },
         character: updatedCharacter,

@@ -45,7 +45,7 @@ import {
   getPlayerId,
   clearAllData,
 } from '@/lib/game/storage';
-import { getRecommendedMonster, getItemById } from '@/lib/game/gameData';
+import { getRecommendedMonster, getItemById, CraftingRecipe, getRandomEquipmentByQualityAndType } from '@/lib/game/gameData';
 import {
   getPetById,
   createPlayerPet,
@@ -87,6 +87,7 @@ interface UseGameStateReturn {
   sellItem: (item: GameItem, price: number) => void;
   buyFromMarket: (listingId: string) => void;
   buyNpcItem: (item: GameItem, price: number) => void;
+  craftItem: (recipe: CraftingRecipe) => void;
   
   // 其他操作
   doMeditate: () => void;
@@ -500,9 +501,19 @@ export function useGameState(): UseGameStateReturn {
     // 更新角色状态
     setCharacter(result.character);
     
-    // 从背包移除
-    setInventory(prev => removeFromInventory(prev, item.id, 1));
-  }, [character, addLog]);
+    // 更新背包
+    let newInventory = [...inventory];
+    
+    // 从背包移除新装备
+    newInventory = removeFromInventory(newInventory, item.id, 1);
+    
+    // 将旧装备放回背包
+    if (result.oldEquipment) {
+      newInventory = addToInventory(newInventory, result.oldEquipment, 1);
+    }
+    
+    setInventory(newInventory);
+  }, [character, inventory, addLog]);
 
   // 卸下装备
   const unequip = useCallback((slot: 'weapon' | 'armor' | 'accessory') => {
@@ -824,6 +835,39 @@ export function useGameState(): UseGameStateReturn {
     addLog('system', result.message);
   }, [character, addLog]);
   
+  // 炼制装备
+  const craftItem = useCallback((recipe: CraftingRecipe) => {
+    if (!character) return;
+    
+    // 检查是否有足够的材料
+    const materialInInventory = inventory.find(i => i.item.id === recipe.requiredMaterialId);
+    if (!materialInInventory || materialInInventory.quantity < recipe.materialCount) {
+      addLog('item', '材料不足，无法炼制！');
+      return;
+    }
+    
+    // 扣除材料
+    let newInventory = removeFromInventory(inventory, recipe.requiredMaterialId, recipe.materialCount);
+    
+    // 随机获取一件对应品质和类型的装备
+    const equipment = getRandomEquipmentByQualityAndType(
+      recipe.targetQuality,
+      recipe.equipmentType,
+      character.realm
+    );
+    
+    if (!equipment) {
+      addLog('item', '炼制失败！');
+      return;
+    }
+    
+    // 添加装备到背包
+    newInventory = addToInventory(newInventory, equipment, 1);
+    
+    setInventory(newInventory);
+    addLog('item', `成功炼制了${equipment.name}！`);
+  }, [character, inventory, addLog]);
+
   // 执行轮回
   const doSamsara = useCallback(() => {
     if (!character) return;
@@ -877,6 +921,7 @@ export function useGameState(): UseGameStateReturn {
     sellItem,
     buyFromMarket,
     buyNpcItem,
+    craftItem,
     doMeditate,
     doTribulation,
     restore,
