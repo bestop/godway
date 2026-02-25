@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Character, Monster, GameLogEntry, Skill, SKILLS } from '@/types/game';
-import { calculateSkillEffect } from '@/lib/game/gameEngine';
+import { Character, Monster, GameLogEntry, Skill, SKILLS, BattleLogEntry } from '@/types/game';
+import { calculateSkillEffect, addExperience, calculateDrops, addToInventory, calculateStatsWithEquipment } from '@/lib/game/gameEngine';
+import { levelUpPet as levelUpPetUtil } from '@/lib/game/petData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,19 +29,21 @@ interface BattleAreaProps {
     monster: Monster | null;
     playerHp: number;
     monsterHp: number;
-    battleLog: string[];
+    battleLog: BattleLogEntry[];
     isAuto: boolean;
-    result: 'win' | 'lose' | null;
+    result?: 'win' | 'lose' | null;
   };
-  onQuickBattle: () => void;
+  onQuickBattle: (monster?: Monster) => void;
   addLog: (type: GameLogEntry['type'], message: string) => void;
   isGodMode?: boolean;
   setCharacter?: (character: Character) => void;
+  setInventory?: (inventory: any[]) => void;
+  inventory?: any[];
 }
 
 type SkillAnimationType = 'fire' | 'heal' | 'powerup' | 'lightning' | 'shield' | 'ultimate' | null;
 
-export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode = false, setCharacter }: BattleAreaProps) {
+export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode = false, setCharacter, setInventory, inventory = [] }: BattleAreaProps) {
   const [selectedMonster, setSelectedMonster] = useState<Monster | null>(null);
   const [isBattling, setIsBattling] = useState(false);
   const [isQuickBattle, setIsQuickBattle] = useState(false);
@@ -77,6 +80,67 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
       return charSkill?.unlocked === true;
     });
   }, [character.skills]);
+  
+  const handleChallengeWin = useCallback((monster: Monster) => {
+    if (!setCharacter || !setInventory) return;
+    
+    let updatedCharacter = { ...character };
+    
+    const expResult = addExperience(updatedCharacter, monster.exp);
+    updatedCharacter = expResult.character;
+    updatedCharacter.gold += monster.gold;
+    
+    const drops = calculateDrops(monster);
+    let newInventory = [...inventory];
+    drops.forEach(item => {
+      newInventory = addToInventory(newInventory, item, 1);
+      addLog('item', `获得了${item.name}！`);
+    });
+    setInventory(newInventory);
+    
+    addLog('battle', `击败了${monster.name}，获得${monster.exp}经验和${monster.gold}金币`);
+    
+    if (expResult.leveledUp) {
+      addLog('level_up', `恭喜！升级到了${updatedCharacter.realm}${expResult.newLevel}层！`);
+    }
+    
+    if (updatedCharacter.pets && updatedCharacter.pets.length > 0) {
+      updatedCharacter.pets = updatedCharacter.pets.map(pet => {
+        if (pet.isActive) {
+          const petExpGain = Math.floor(monster.exp * 0.3);
+          const loyaltyGain = 1;
+          const updatedPet = { ...pet.pet };
+          updatedPet.exp += petExpGain;
+          updatedPet.loyalty = Math.min(100, updatedPet.loyalty + loyaltyGain);
+          
+          while (updatedPet.exp >= updatedPet.maxExp) {
+            const leveledPet = levelUpPetUtil(updatedPet);
+            updatedPet.level = leveledPet.level;
+            updatedPet.exp = leveledPet.exp;
+            updatedPet.maxExp = leveledPet.maxExp;
+            updatedPet.stats = leveledPet.stats;
+            addLog('pet', `宠物 ${updatedPet.name} 升级了！`);
+          }
+          
+          return {
+            ...pet,
+            pet: updatedPet,
+            battleCount: (pet.battleCount || 0) + 1,
+            winCount: (pet.winCount || 0) + 1
+          };
+        }
+        return pet;
+      });
+    }
+    
+    updatedCharacter.stats.hp = playerCurrentHp;
+    updatedCharacter.stats.mp = playerCurrentMp;
+    
+    const stats = calculateStatsWithEquipment(updatedCharacter);
+    updatedCharacter.stats = { ...updatedCharacter.stats, maxHp: stats.maxHp, maxMp: stats.maxMp };
+    
+    setCharacter(updatedCharacter);
+  }, [character, inventory, addLog, setCharacter, setInventory, playerCurrentHp, playerCurrentMp]);
   
   const monsters = getMonstersByRealm(character.realm);
   const maxMonsterHp = selectedMonster?.hp || 1;
@@ -218,7 +282,9 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
             setIsBattling(false);
             setBattlePhase('idle');
             setTimeout(() => setShowResult(false), 150);
-            // 注意：不要调用 onQuickBattle()，因为这是挑战战斗，不是快速战斗
+            if (selectedMonster) {
+              handleChallengeWin(selectedMonster);
+            }
           }, 800);
           return newHp;
         }
@@ -326,7 +392,9 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
                 setIsBattling(false);
                 setBattlePhase('idle');
                 setTimeout(() => setShowResult(false), 150);
-                // 注意：不要调用 onQuickBattle()，因为这是挑战战斗，不是快速战斗
+                if (selectedMonster) {
+                  handleChallengeWin(selectedMonster);
+                }
               }, 800);
               return newHp;
             }
@@ -571,7 +639,7 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
     }
     
     setBattleCount(prev => prev + 1);
-    onQuickBattle();
+    onQuickBattle(selectedMonster || undefined);
   };
   
   // 确保快速战斗后可以选择怪物 - 添加一个重置按钮或逻辑
@@ -760,7 +828,7 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
                         ? 'bg-gradient-to-b from-yellow-500 to-yellow-800 border-yellow-400 shadow-yellow-500/50'
                         : 'bg-gradient-to-b from-blue-500 to-blue-800 border-blue-400 shadow-blue-500/50'
                     }`}>
-                      <span className="text-4xl">{character.avatar || '🧑'}</span>
+                      <span className="text-4xl">🧑</span>
                     </div>
                   </div>
                   
@@ -1167,9 +1235,6 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
                           <div className="text-xs text-slate-500 mt-1">
                             Lv.{monster.level} | 🩷{monster.hp} ⚔️{monster.atk} 🛡️{monster.def}
                           </div>
-                          <div className="text-xs text-slate-400 truncate mt-0.5">
-                            {monster.description}
-                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -1235,9 +1300,7 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
                 {getDifficultyLabel(selectedMonster).text}
               </Badge>
             </div>
-            <div className="mt-2 text-sm text-slate-600">
-              {selectedMonster.description}
-            </div>
+            
           </CardContent>
         </Card>
       )}

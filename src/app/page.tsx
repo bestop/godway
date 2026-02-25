@@ -355,9 +355,9 @@ export default function Home() {
     return { won: allWon, exp: totalExp, gold: totalGold };
   }, [character, activeCheatEffects]);
 
-  const extendedQuickBattle = useCallback(() => {
+  const extendedQuickBattle = useCallback((selectedMonster?: Monster) => {
     const godMode = isGodModeActive(activeCheatEffects);
-    quickBattle(godMode);
+    quickBattle(godMode, selectedMonster);
     
     setStatistics(prev => ({
       ...prev,
@@ -567,7 +567,7 @@ export default function Home() {
               <TabsContent value="battle" className="mt-4">
                 <BattleArea 
                   character={character}
-                  battleLogs={logs}
+                  battle={battle}
                   onQuickBattle={extendedQuickBattle}
                   addLog={addLog}
                   isGodMode={isGodModeActive(activeCheatEffects)}

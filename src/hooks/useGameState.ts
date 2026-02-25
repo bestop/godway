@@ -76,7 +76,7 @@ interface UseGameStateReturn {
   
   // 战斗相关
   startBattle: (monster: Monster, isGodMode?: boolean) => void;
-  quickBattle: (isGodMode?: boolean) => void;
+  quickBattle: (isGodMode?: boolean, monster?: Monster) => void;
   endBattle: () => void;
   mapEncounter: (monster: Monster, isGodMode?: boolean) => void;
   
@@ -247,14 +247,14 @@ export function useGameState(): UseGameStateReturn {
   }, [character, addLog]);
 
   // 快速战斗
-  const quickBattle = useCallback((isGodMode: boolean = false) => {
+  const quickBattle = useCallback((isGodMode: boolean = false, monster?: Monster) => {
     if (!character || battle.inBattle) return;
     
-    const monster = getRecommendedMonster(character.realm, character.level);
-    if (!monster) return;
+    const targetMonster = monster || getRecommendedMonster(character.realm, character.level);
+    if (!targetMonster) return;
     
     // 执行战斗
-    const { logs: battleLogs, result, finalHp } = executeBattle(character, monster, isGodMode);
+    const { logs: battleLogs, result, finalHp } = executeBattle(character, targetMonster, isGodMode);
     
     // 更新角色状态
     let updatedCharacter = { ...character };
@@ -263,12 +263,12 @@ export function useGameState(): UseGameStateReturn {
     // 处理战斗结果
     if (result === 'win') {
       // 获得经验和金币
-      const expResult = addExperience(updatedCharacter, monster.exp);
+      const expResult = addExperience(updatedCharacter, targetMonster.exp);
       updatedCharacter = expResult.character;
-      updatedCharacter.gold += monster.gold;
+      updatedCharacter.gold += targetMonster.gold;
       
       // 获得掉落物
-      const drops = calculateDrops(monster);
+      const drops = calculateDrops(targetMonster);
       let newInventory = [...inventory];
       drops.forEach(item => {
         newInventory = addToInventory(newInventory, item, 1);
@@ -276,7 +276,7 @@ export function useGameState(): UseGameStateReturn {
       });
       setInventory(newInventory);
       
-      addLog('battle', `击败了${monster.name}，获得${monster.exp}经验和${monster.gold}金币`);
+      addLog('battle', `击败了${targetMonster.name}，获得${targetMonster.exp}经验和${targetMonster.gold}金币`);
       
       if (expResult.leveledUp) {
         addLog('level_up', `恭喜！升级到了${updatedCharacter.realm}${expResult.newLevel}层！`);
@@ -286,7 +286,7 @@ export function useGameState(): UseGameStateReturn {
       if (updatedCharacter.pets && updatedCharacter.pets.length > 0) {
         updatedCharacter.pets = updatedCharacter.pets.map(pet => {
           if (pet.isActive) {
-            const petExpGain = Math.floor(monster.exp * 0.3);
+            const petExpGain = Math.floor(targetMonster.exp * 0.3);
             const loyaltyGain = 1;
             const updatedPet = { ...pet.pet };
             updatedPet.exp += petExpGain;
@@ -313,7 +313,7 @@ export function useGameState(): UseGameStateReturn {
         });
       }
     } else {
-      addLog('battle', `被${monster.name}击败了...`);
+      addLog('battle', `被${targetMonster.name}击败了...`);
       
       // 更新宠物战斗次数（失败也计入）
       if (updatedCharacter.pets && updatedCharacter.pets.length > 0) {
@@ -336,7 +336,7 @@ export function useGameState(): UseGameStateReturn {
     setCharacter(updatedCharacter);
     setBattle({
       inBattle: false,
-      monster,
+      monster: targetMonster,
       playerHp: finalHp,
       monsterHp: 0,
       battleLog: battleLogs,
