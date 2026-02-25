@@ -187,6 +187,7 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
             setTimeout(() => {
               setIsBattling(false);
               setBattlePhase('idle');
+              setSelectedMonster(null);
               setTimeout(() => setShowResult(false), 150);
             }, 500);
           }, 200);
@@ -278,12 +279,14 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
           setBattlePhase('result');
           setShowResult(true);
           
+          const currentMonster = selectedMonster;
           setTimeout(() => {
             setIsBattling(false);
             setBattlePhase('idle');
+            setSelectedMonster(null);
             setTimeout(() => setShowResult(false), 150);
-            if (selectedMonster) {
-              handleChallengeWin(selectedMonster);
+            if (currentMonster) {
+              handleChallengeWin(currentMonster);
             }
           }, 800);
           return newHp;
@@ -388,12 +391,14 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
               setBattlePhase('result');
               setShowResult(true);
               
+              const currentMonster = selectedMonster;
               setTimeout(() => {
                 setIsBattling(false);
                 setBattlePhase('idle');
+                setSelectedMonster(null);
                 setTimeout(() => setShowResult(false), 150);
-                if (selectedMonster) {
-                  handleChallengeWin(selectedMonster);
+                if (currentMonster) {
+                  handleChallengeWin(currentMonster);
                 }
               }, 800);
               return newHp;
@@ -684,8 +689,8 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
     return { text: '极难', color: 'text-red-500', bg: 'bg-red-100' };
   };
 
-  // 只有真正的挑战战斗才算激活状态，快速战斗不算
-  const isAnyBattleActive = isBattling;
+  // 检查是否有任何战斗正在进行（包括本地战斗和父组件的战斗状态）
+  const isAnyBattleActive = isBattling || battle.inBattle;
   
   return (
     <div className="space-y-4">
@@ -715,27 +720,77 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
       {/* 快速战斗 */}
       <Card className="bg-white border-green-200 text-slate-800 shadow-lg">
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex-1">
-              <div className="text-sm text-slate-600 mb-1">快速战斗</div>
-              <div className="text-lg font-bold text-green-600 flex items-center gap-2">
-                <SwordsIcon className="w-5 h-5" />
-                推荐目标: {getRecommendedMonster(character.realm, character.level)?.name || '无'}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex-1">
+                <div className="text-sm text-slate-600 mb-1">快速战斗</div>
+                <div className="text-lg font-bold text-green-600 flex items-center gap-2">
+                  <SwordsIcon className="w-5 h-5" />
+                  {selectedMonster ? (
+                    <span className="flex items-center gap-2">
+                      <span className="text-2xl">{selectedMonster.icon}</span>
+                      已选择: {selectedMonster.name}
+                    </span>
+                  ) : (
+                    <>推荐目标: {getRecommendedMonster(character.realm, character.level)?.name || '无'}</>
+                  )}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  战斗次数: {battleCount}
+                </div>
               </div>
-              <div className="text-xs text-slate-500 mt-1">
-                战斗次数: {battleCount}
-              </div>
+              <Button 
+                onClick={handleQuickBattle}
+                disabled={isAnyBattleActive || character.stats.hp <= 0}
+                className="flex-1 h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg disabled:opacity-50 transition-all active:scale-95"
+              >
+                <span className="flex items-center gap-2">
+                  <Zap className="w-6 h-6" />
+                  快速战斗
+                </span>
+              </Button>
             </div>
-            <Button 
-              onClick={handleQuickBattle}
-              disabled={isAnyBattleActive || character.stats.hp <= 0}
-              className="flex-1 h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg disabled:opacity-50 transition-all active:scale-95"
-            >
-              <span className="flex items-center gap-2">
-                <Zap className="w-6 h-6" />
-                快速战斗
-              </span>
-            </Button>
+            
+            {/* 快速战斗怪物选择 */}
+            <div className="border-t border-slate-200 pt-3">
+              <div className="text-sm text-slate-600 mb-2">选择快速战斗目标（可选）：</div>
+              <ScrollArea className="h-32">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pr-2">
+                  {monsters.map((monster) => {
+                    const difficulty = getDifficultyLabel(monster);
+                    const isSelected = selectedMonster?.id === monster.id;
+                    return (
+                      <div
+                        key={monster.id}
+                        onClick={() => !isAnyBattleActive && setSelectedMonster(isSelected ? null : monster)}
+                        className={`cursor-pointer p-2 rounded-lg border-2 transition-all ${
+                          isSelected 
+                            ? 'border-green-500 bg-green-50 shadow-md' 
+                            : 'border-slate-200 hover:border-green-300 hover:bg-green-50/50'
+                        } ${isAnyBattleActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{monster.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{monster.name}</div>
+                            <div className="text-xs text-slate-500">Lv.{monster.level}</div>
+                          </div>
+                          <Badge className={`${difficulty.bg} ${difficulty.color} text-[10px] flex-shrink-0`}>
+                            {difficulty.text}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              {selectedMonster && (
+                <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
+                  <span>✓</span>
+                  <span>已选择 {selectedMonster.name}，点击其他怪物可更换，点击已选怪物可取消选择</span>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
