@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Character, Monster, GameLogEntry, Skill, SKILLS, BattleLogEntry } from '@/types/game';
 import { calculateSkillEffect, addExperience, calculateDrops, addToInventory, calculateStatsWithEquipment } from '@/lib/game/gameEngine';
 import { levelUpPet as levelUpPetUtil } from '@/lib/game/petData';
@@ -51,6 +51,7 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
   const [showResult, setShowResult] = useState(false);
   const [currentRound, setCurrentRound] = useState(0);
   const [battleCount, setBattleCount] = useState(0);
+  const battleEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // 战斗动画状态（仅用于挑战战斗）
   const [battlePhase, setBattlePhase] = useState<'idle' | 'start' | 'player_turn' | 'player_attack' | 'monster_attack' | 'skill' | 'damage' | 'result'>('idle');
@@ -84,10 +85,10 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
   const handleChallengeWin = useCallback((monster: Monster) => {
     if (!setCharacter || !setInventory) return;
     
-    let updatedCharacter = { ...character };
+    let updatedCharacter = { ...character, stats: { ...character.stats } };
     
     const expResult = addExperience(updatedCharacter, monster.exp);
-    updatedCharacter = expResult.character;
+    updatedCharacter = { ...expResult.character, stats: { ...expResult.character.stats } };
     updatedCharacter.gold += monster.gold;
     
     const drops = calculateDrops(monster);
@@ -105,39 +106,48 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
     }
     
     if (updatedCharacter.pets && updatedCharacter.pets.length > 0) {
-      updatedCharacter.pets = updatedCharacter.pets.map(pet => {
-        if (pet.isActive) {
-          const petExpGain = Math.floor(monster.exp * 0.3);
-          const loyaltyGain = 1;
-          const updatedPet = { ...pet.pet };
-          updatedPet.exp += petExpGain;
-          updatedPet.loyalty = Math.min(100, updatedPet.loyalty + loyaltyGain);
-          
-          while (updatedPet.exp >= updatedPet.maxExp) {
-            const leveledPet = levelUpPetUtil(updatedPet);
-            updatedPet.level = leveledPet.level;
-            updatedPet.exp = leveledPet.exp;
-            updatedPet.maxExp = leveledPet.maxExp;
-            updatedPet.stats = leveledPet.stats;
-            addLog('pet', `宠物 ${updatedPet.name} 升级了！`);
+      updatedCharacter = {
+        ...updatedCharacter,
+        pets: updatedCharacter.pets.map(pet => {
+          if (pet.isActive) {
+            const petExpGain = Math.floor(monster.exp * 0.3);
+            const loyaltyGain = 1;
+            let updatedPet = { ...pet.pet, stats: { ...pet.pet.stats } };
+            updatedPet.exp += petExpGain;
+            updatedPet.loyalty = Math.min(100, updatedPet.loyalty + loyaltyGain);
+            
+            while (updatedPet.exp >= updatedPet.maxExp) {
+              const leveledPet = levelUpPetUtil(updatedPet);
+              updatedPet = { ...leveledPet, stats: { ...leveledPet.stats } };
+              addLog('pet', `宠物 ${updatedPet.name} 升级了！`);
+            }
+            
+            return {
+              ...pet,
+              pet: updatedPet,
+              battleCount: (pet.battleCount || 0) + 1,
+              winCount: (pet.winCount || 0) + 1
+            };
           }
-          
-          return {
-            ...pet,
-            pet: updatedPet,
-            battleCount: (pet.battleCount || 0) + 1,
-            winCount: (pet.winCount || 0) + 1
-          };
-        }
-        return pet;
-      });
+          return pet;
+        })
+      };
     }
     
-    updatedCharacter.stats.hp = playerCurrentHp;
-    updatedCharacter.stats.mp = playerCurrentMp;
+    updatedCharacter = {
+      ...updatedCharacter,
+      stats: {
+        ...updatedCharacter.stats,
+        hp: playerCurrentHp,
+        mp: playerCurrentMp
+      }
+    };
     
     const stats = calculateStatsWithEquipment(updatedCharacter);
-    updatedCharacter.stats = { ...updatedCharacter.stats, maxHp: stats.maxHp, maxMp: stats.maxMp };
+    updatedCharacter = {
+      ...updatedCharacter,
+      stats: { ...updatedCharacter.stats, maxHp: stats.maxHp, maxMp: stats.maxMp }
+    };
     
     setCharacter(updatedCharacter);
   }, [character, inventory, addLog, setCharacter, setInventory, playerCurrentHp, playerCurrentMp]);
@@ -180,17 +190,21 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
               }
             });
           }
-          setTimeout(() => {
-            setBattleResult('lose');
-            setBattlePhase('result');
-            setShowResult(true);
-            setTimeout(() => {
-              setIsBattling(false);
-              setBattlePhase('idle');
-              setSelectedMonster(null);
-              setTimeout(() => setShowResult(false), 150);
-            }, 500);
-          }, 200);
+          setBattleResult('lose');
+          setBattlePhase('result');
+          setShowResult(true);
+          
+          if (battleEndTimerRef.current) {
+            clearTimeout(battleEndTimerRef.current);
+          }
+          
+          battleEndTimerRef.current = setTimeout(() => {
+            setShowResult(false);
+            setIsBattling(false);
+            setBattlePhase('idle');
+            setSelectedMonster(null);
+            setBattleResult(null);
+          }, 1500);
         }
         return newHp;
       });
@@ -280,15 +294,21 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
           setShowResult(true);
           
           const currentMonster = selectedMonster;
-          setTimeout(() => {
+          
+          if (battleEndTimerRef.current) {
+            clearTimeout(battleEndTimerRef.current);
+          }
+          
+          battleEndTimerRef.current = setTimeout(() => {
+            setShowResult(false);
             setIsBattling(false);
             setBattlePhase('idle');
             setSelectedMonster(null);
-            setTimeout(() => setShowResult(false), 150);
+            setBattleResult(null);
             if (currentMonster) {
               handleChallengeWin(currentMonster);
             }
-          }, 800);
+          }, 1500);
           return newHp;
         }
         
@@ -392,15 +412,21 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
               setShowResult(true);
               
               const currentMonster = selectedMonster;
-              setTimeout(() => {
+              
+              if (battleEndTimerRef.current) {
+                clearTimeout(battleEndTimerRef.current);
+              }
+              
+              battleEndTimerRef.current = setTimeout(() => {
+                setShowResult(false);
                 setIsBattling(false);
                 setBattlePhase('idle');
                 setSelectedMonster(null);
-                setTimeout(() => setShowResult(false), 150);
+                setBattleResult(null);
                 if (currentMonster) {
                   handleChallengeWin(currentMonster);
                 }
-              }, 800);
+              }, 1500);
               return newHp;
             }
             

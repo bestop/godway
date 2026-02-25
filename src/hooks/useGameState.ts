@@ -71,8 +71,8 @@ interface UseGameStateReturn {
   resetGame: () => void;
   setTab: (tab: GameTab) => void;
   addLog: (type: GameLogEntry['type'], message: string) => void;
-  setCharacter: (character: Character) => void;
-  setInventory: (inventory: InventoryItem[]) => void;
+  setCharacter: (character: Character | ((prev: Character | null) => Character | null)) => void;
+  setInventory: (inventory: InventoryItem[] | ((prev: InventoryItem[]) => InventoryItem[])) => void;
   
   // 战斗相关
   startBattle: (monster: Monster, isGodMode?: boolean) => void;

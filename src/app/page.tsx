@@ -296,28 +296,43 @@ export default function Home() {
     const effects = outcome.effects;
     
     if (character) {
-      if (effects.hp) {
-        const newHp = Math.max(1, Math.min(character.stats.maxHp, character.stats.hp + effects.hp));
-        character.stats.hp = newHp;
-      }
-      if (effects.mp) {
-        const newMp = Math.max(0, Math.min(character.stats.maxMp, character.stats.mp + effects.mp));
-        character.stats.mp = newMp;
-      }
-      if (effects.gold) {
-        character.gold += effects.gold;
-      }
-      if (effects.exp) {
-        addExperience(character, effects.exp);
-      }
+      setCharacter(prev => {
+        if (!prev) return prev;
+        let updated = { ...prev };
+        
+        if (effects.hp) {
+          const newHp = Math.max(1, Math.min(updated.stats.maxHp, updated.stats.hp + effects.hp));
+          updated = {
+            ...updated,
+            stats: { ...updated.stats, hp: newHp }
+          };
+        }
+        if (effects.mp) {
+          const newMp = Math.max(0, Math.min(updated.stats.maxMp, updated.stats.mp + effects.mp));
+          updated = {
+            ...updated,
+            stats: { ...updated.stats, mp: newMp }
+          };
+        }
+        if (effects.gold) {
+          updated = { ...updated, gold: updated.gold + effects.gold };
+        }
+        if (effects.exp) {
+          const expResult = addExperience(updated, effects.exp);
+          updated = expResult.character;
+        }
+        
+        return updated;
+      });
+      
       if (effects.item) {
         const item = getItemById(effects.item);
         if (item) {
-          addToInventory(inventory, item, 1);
+          setInventory(prev => addToInventory(prev, item, 1));
         }
       }
     }
-  }, [character, inventory]);
+  }, [character, setCharacter, setInventory]);
 
   const handleDungeonBattle = useCallback((monsters: Monster[]): { won: boolean; exp: number; gold: number } => {
     if (!character) return { won: false, exp: 0, gold: 0 };
@@ -342,7 +357,13 @@ export default function Home() {
       }
     }
 
-    character.stats.hp = playerHp;
+    setCharacter(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        stats: { ...prev.stats, hp: playerHp }
+      };
+    });
 
     setStatistics(prev => ({
       ...prev,
