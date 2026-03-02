@@ -2,26 +2,27 @@
 
 import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useGameState, GameTab } from '@/hooks/useGameState';
-import { StartScreen } from '@/components/game/StartScreen';
-import { RandomEventModal, EventResultModal } from '@/components/game/RandomEventModal';
-import { CheatCodeDialog } from '@/components/game/CheatCodeDialog';
-import { GameLog } from '@/components/game/GameLog';
 
 // 懒加载组件
-const CharacterPanel = lazy(() => import('@/components/game/CharacterPanel'));
-const BattleArea = lazy(() => import('@/components/game/BattleArea'));
-const Inventory = lazy(() => import('@/components/game/Inventory'));
-const Tribulation = lazy(() => import('@/components/game/Tribulation'));
-const Market = lazy(() => import('@/components/game/Market'));
-const MapArea = lazy(() => import('@/components/game/MapArea'));
-const QuestPanel = lazy(() => import('@/components/game/QuestPanel'));
-const AchievementPanel = lazy(() => import('@/components/game/AchievementPanel'));
-const DailySignInPanel = lazy(() => import('@/components/game/DailySignInPanel'));
-const DungeonPanel = lazy(() => import('@/components/game/DungeonPanel'));
-const PetPanel = lazy(() => import('@/components/game/PetPanel'));
-const PetShop = lazy(() => import('@/components/game/PetShop'));
-const SkillPanel = lazy(() => import('@/components/game/SkillPanel'));
-const SamsaraPanel = lazy(() => import('@/components/game/SamsaraPanel'));
+const StartScreen = lazy(() => import('@/components/game/StartScreen').then(m => ({ default: m.StartScreen })));
+const RandomEventModal = lazy(() => import('@/components/game/RandomEventModal').then(m => ({ default: m.RandomEventModal })));
+const EventResultModal = lazy(() => import('@/components/game/RandomEventModal').then(m => ({ default: m.EventResultModal })));
+const CheatCodeDialog = lazy(() => import('@/components/game/CheatCodeDialog').then(m => ({ default: m.CheatCodeDialog })));
+const GameLog = lazy(() => import('@/components/game/GameLog').then(m => ({ default: m.GameLog })));
+const CharacterPanel = lazy(() => import('@/components/game/CharacterPanel').then(m => ({ default: m.CharacterPanel })));
+const BattleArea = lazy(() => import('@/components/game/BattleArea').then(m => ({ default: m.BattleArea })));
+const Inventory = lazy(() => import('@/components/game/Inventory').then(m => ({ default: m.Inventory })));
+const Tribulation = lazy(() => import('@/components/game/Tribulation').then(m => ({ default: m.Tribulation })));
+const Market = lazy(() => import('@/components/game/Market').then(m => ({ default: m.Market })));
+const MapArea = lazy(() => import('@/components/game/MapArea').then(m => ({ default: m.MapArea })));
+const QuestPanel = lazy(() => import('@/components/game/QuestPanel').then(m => ({ default: m.QuestPanel })));
+const AchievementPanel = lazy(() => import('@/components/game/AchievementPanel').then(m => ({ default: m.AchievementPanel })));
+const DailySignInPanel = lazy(() => import('@/components/game/DailySignInPanel').then(m => ({ default: m.DailySignInPanel })));
+const DungeonPanel = lazy(() => import('@/components/game/DungeonPanel').then(m => ({ default: m.DungeonPanel })));
+const PetPanel = lazy(() => import('@/components/game/PetPanel').then(m => ({ default: m.PetPanel })));
+const PetShop = lazy(() => import('@/components/game/PetShop').then(m => ({ default: m.PetShop })));
+const SkillPanel = lazy(() => import('@/components/game/SkillPanel').then(m => ({ default: m.SkillPanel })));
+const SamsaraPanel = lazy(() => import('@/components/game/SamsaraPanel').then(m => ({ default: m.SamsaraPanel })));
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -408,34 +409,40 @@ export default function Home() {
   }
 
   if (!character) {
-    return <StartScreen onStart={initGame} />;
+    return (
+      <Suspense fallback={<div className="game-bg flex items-center justify-center"><div className="text-center"><Sparkles className="w-12 h-12 mx-auto animate-pulse text-amber-500 mb-4" /><div className="text-xl text-slate-700 font-medium">加载中...</div></div></div>}>
+        <StartScreen onStart={initGame} />
+      </Suspense>
+    );
   }
 
   return (
     <div className="game-bg text-slate-800">
-      <RandomEventModal
-        event={randomEvent}
-        character={character}
-        onClose={() => setRandomEvent(null)}
-        onChoose={handleRandomEventChoice}
-      />
-      
-      <EventResultModal
-        outcome={eventOutcome}
-        onClose={() => setEventOutcome(null)}
-      />
+      <Suspense fallback={<div></div>}>
+        <RandomEventModal
+          event={randomEvent}
+          character={character}
+          onClose={() => setRandomEvent(null)}
+          onChoose={handleRandomEventChoice}
+        />
+        
+        <EventResultModal
+          outcome={eventOutcome}
+          onClose={() => setEventOutcome(null)}
+        />
 
-      <CheatCodeDialog
-        open={showCheatDialog}
-        onOpenChange={setShowCheatDialog}
-        character={character}
-        inventory={inventory}
-        activeEffects={activeCheatEffects}
-        onUpdateCharacter={setCharacter}
-        onUpdateInventory={setInventory}
-        onUpdateEffects={setActiveCheatEffects}
-        addLog={addLog}
-      />
+        <CheatCodeDialog
+          open={showCheatDialog}
+          onOpenChange={setShowCheatDialog}
+          character={character}
+          inventory={inventory}
+          activeEffects={activeCheatEffects}
+          onUpdateCharacter={setCharacter}
+          onUpdateInventory={setInventory}
+          onUpdateEffects={setActiveCheatEffects}
+          addLog={addLog}
+        />
+      </Suspense>
 
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-amber-300/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -514,12 +521,14 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <div className="lg:col-span-1">
-            <CharacterPanel 
-              character={character} 
-              inventory={inventory}
-              onRestore={restore}
-              onMeditate={doMeditate}
-            />
+            <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-64"></div>}>
+              <CharacterPanel 
+                character={character} 
+                inventory={inventory}
+                onRestore={restore}
+                onMeditate={doMeditate}
+              />
+            </Suspense>
           </div>
 
           <div className="lg:col-span-3 space-y-4">
@@ -580,152 +589,180 @@ export default function Home() {
               </TabsList>
 
               <TabsContent value="map" className="mt-4">
-                <MapArea 
-                  character={character}
-                  onEncounter={(monster) => mapEncounter(monster, isGodModeActive(activeCheatEffects))}
-                  addLog={addLog}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <MapArea 
+                    character={character}
+                    onEncounter={(monster) => mapEncounter(monster, isGodModeActive(activeCheatEffects))}
+                    addLog={addLog}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="battle" className="mt-4">
-                <BattleArea 
-                  character={character}
-                  battle={battle}
-                  onQuickBattle={extendedQuickBattle}
-                  addLog={addLog}
-                  isGodMode={isGodModeActive(activeCheatEffects)}
-                  setCharacter={setCharacter}
-                  setInventory={setInventory}
-                  inventory={inventory}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <BattleArea 
+                    character={character}
+                    battle={battle}
+                    onQuickBattle={extendedQuickBattle}
+                    addLog={addLog}
+                    isGodMode={isGodModeActive(activeCheatEffects)}
+                    setCharacter={setCharacter}
+                    setInventory={setInventory}
+                    inventory={inventory}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="skill" className="mt-4">
-                <SkillPanel 
-                  character={character}
-                  inventory={inventory}
-                  onUnlockSkill={unlockSkill}
-                  onUseSkill={useSkill}
-                  onUpgradeSkill={upgradeSkill}
-                  onUseItem={useItem}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <SkillPanel 
+                    character={character}
+                    inventory={inventory}
+                    onUnlockSkill={unlockSkill}
+                    onUseSkill={useSkill}
+                    onUpgradeSkill={upgradeSkill}
+                    onUseItem={useItem}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="samsara" className="mt-4">
-                <SamsaraPanel 
-                  character={character}
-                  onSamsara={doSamsara}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <SamsaraPanel 
+                    character={character}
+                    onSamsara={doSamsara}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="dungeon" className="mt-4">
-                <DungeonPanel
-                  character={character}
-                  dungeonProgress={dungeonProgress}
-                  onUpdateProgress={handleDungeonProgressUpdate}
-                  addLog={addLog}
-                  onBattle={handleDungeonBattle}
-                  onReward={handleReward}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <DungeonPanel
+                    character={character}
+                    dungeonProgress={dungeonProgress}
+                    onUpdateProgress={handleDungeonProgressUpdate}
+                    addLog={addLog}
+                    onBattle={handleDungeonBattle}
+                    onReward={handleReward}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="quest" className="mt-4">
-                <QuestPanel
-                  character={character}
-                  questProgress={questProgress}
-                  onUpdateProgress={handleQuestProgressUpdate}
-                  addLog={addLog}
-                  onReward={handleReward}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <QuestPanel
+                    character={character}
+                    questProgress={questProgress}
+                    onUpdateProgress={handleQuestProgressUpdate}
+                    addLog={addLog}
+                    onReward={handleReward}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="achievement" className="mt-4">
-                <AchievementPanel
-                  character={character}
-                  achievementProgress={achievementProgress}
-                  statistics={{
-                    totalWins: statistics.totalWins,
-                    totalGoldEarned: statistics.totalGoldEarned,
-                    tribulationSuccesses: statistics.tribulationSuccesses
-                  }}
-                  onUpdateProgress={handleAchievementProgressUpdate}
-                  addLog={addLog}
-                  onReward={handleAchievementReward}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <AchievementPanel
+                    character={character}
+                    achievementProgress={achievementProgress}
+                    statistics={{
+                      totalWins: statistics.totalWins,
+                      totalGoldEarned: statistics.totalGoldEarned,
+                      tribulationSuccesses: statistics.tribulationSuccesses
+                    }}
+                    onUpdateProgress={handleAchievementProgressUpdate}
+                    addLog={addLog}
+                    onReward={handleAchievementReward}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="inventory" className="mt-4">
-                <Inventory 
-                  character={character}
-                  inventory={inventory}
-                  onUseItem={useItem}
-                  onEquip={equip}
-                  onUnequip={unequip}
-                  onSellItem={sellItem}
-                  onCraftItem={craftItem}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <Inventory 
+                    character={character}
+                    inventory={inventory}
+                    onUseItem={useItem}
+                    onEquip={equip}
+                    onUnequip={unequip}
+                    onSellItem={sellItem}
+                    onCraftItem={craftItem}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="market" className="mt-4">
-                <Market 
-                  character={character}
-                  market={market}
-                  playerId={playerId}
-                  onBuy={buyFromMarket}
-                  onBuyNpcItem={buyNpcItem}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <Market 
+                    character={character}
+                    market={market}
+                    playerId={playerId}
+                    onBuy={buyFromMarket}
+                    onBuyNpcItem={buyNpcItem}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="tribulation" className="mt-4">
-                <Tribulation 
-                  character={character}
-                  onTribulation={() => {
-                    const result = doTribulation();
-                    if (result.success) {
-                      setStatistics(prev => ({
-                        ...prev,
-                        tribulationSuccesses: prev.tribulationSuccesses + 1
-                      }));
-                    }
-                  }}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <Tribulation 
+                    character={character}
+                    onTribulation={() => {
+                      const result = doTribulation();
+                      if (result.success) {
+                        setStatistics(prev => ({
+                          ...prev,
+                          tribulationSuccesses: prev.tribulationSuccesses + 1
+                        }));
+                      }
+                    }}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="pet" className="mt-4">
-                <PetPanel
-                  character={character}
-                  onActivatePet={activatePet}
-                  onDeactivatePet={deactivatePet}
-                  onRenamePet={renamePet}
-                  onEvolvePet={evolvePet}
-                  onLevelUpPet={levelUpPet}
-                  addLog={addLog}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <PetPanel
+                    character={character}
+                    onActivatePet={activatePet}
+                    onDeactivatePet={deactivatePet}
+                    onRenamePet={renamePet}
+                    onEvolvePet={evolvePet}
+                    onLevelUpPet={levelUpPet}
+                    addLog={addLog}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="petshop" className="mt-4">
-                <PetShop
-                  character={character}
-                  onBuyPet={buyPet}
-                  addLog={addLog}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <PetShop
+                    character={character}
+                    onBuyPet={buyPet}
+                    addLog={addLog}
+                  />
+                </Suspense>
               </TabsContent>
 
               <TabsContent value="daily" className="mt-4">
-                <DailySignInPanel
-                  character={character}
-                  dailySignIn={dailySignIn}
-                  idleReward={idleReward}
-                  onUpdateSignIn={handleSignInUpdate}
-                  onUpdateIdleReward={handleIdleRewardUpdate}
-                  addLog={addLog}
-                  onReward={handleReward}
-                />
+                <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-96"></div>}>
+                  <DailySignInPanel
+                    character={character}
+                    dailySignIn={dailySignIn}
+                    idleReward={idleReward}
+                    onUpdateSignIn={handleSignInUpdate}
+                    onUpdateIdleReward={handleIdleRewardUpdate}
+                    addLog={addLog}
+                    onReward={handleReward}
+                  />
+                </Suspense>
               </TabsContent>
             </Tabs>
 
             <div className="mt-4">
-              <GameLog logs={logs} />
+              <Suspense fallback={<div className="animate-pulse bg-slate-100 rounded-lg h-64"></div>}>
+                <GameLog logs={logs} />
+              </Suspense>
             </div>
           </div>
         </div>

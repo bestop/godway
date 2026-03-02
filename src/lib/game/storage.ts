@@ -266,8 +266,15 @@ export function loadMarket(): MarketListing[] {
     const data = localStorage.getItem(STORAGE_KEYS.MARKET);
     if (data) {
       const existingListings = JSON.parse(data);
-      // 如果已有数据，合并NPC商品（过滤掉已不存在的NPC商品，重新生成）
+      // 检查是否有NPC商品，如果有且数量足够，就不重新生成
       const playerListings = existingListings.filter((l: MarketListing) => l.sellerId !== 'npc_shop');
+      const existingNpcListings = existingListings.filter((l: MarketListing) => l.sellerId === 'npc_shop');
+      
+      // 如果已有足够的NPC商品（至少50个），就使用现有数据
+      if (existingNpcListings.length >= 50) {
+        return [...playerListings, ...existingNpcListings];
+      }
+      // 否则重新生成NPC商品
       const npcListings = generateNPCMarketListings();
       return [...playerListings, ...npcListings];
     }
