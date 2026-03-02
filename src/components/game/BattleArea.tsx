@@ -746,77 +746,34 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
       {/* 快速战斗 */}
       <Card className="bg-white border-green-200 text-slate-800 shadow-lg">
         <CardContent className="p-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex-1">
-                <div className="text-sm text-slate-600 mb-1">快速战斗</div>
-                <div className="text-lg font-bold text-green-600 flex items-center gap-2">
-                  <SwordsIcon className="w-5 h-5" />
-                  {selectedMonster ? (
-                    <span className="flex items-center gap-2">
-                      <span className="text-2xl">{selectedMonster.icon}</span>
-                      已选择: {selectedMonster.name}
-                    </span>
-                  ) : (
-                    <>推荐目标: {getRecommendedMonster(character.realm, character.level)?.name || '无'}</>
-                  )}
-                </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  战斗次数: {battleCount}
-                </div>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex-1">
+              <div className="text-sm text-slate-600 mb-1">快速战斗</div>
+              <div className="text-lg font-bold text-green-600 flex items-center gap-2">
+                <SwordsIcon className="w-5 h-5" />
+                {selectedMonster ? (
+                  <span className="flex items-center gap-2">
+                    <span className="text-2xl">{selectedMonster.icon}</span>
+                    已选择: {selectedMonster.name}
+                  </span>
+                ) : (
+                  <>推荐目标: {getRecommendedMonster(character.realm, character.level)?.name || '无'}</>
+                )}
               </div>
-              <Button 
-                onClick={handleQuickBattle}
-                disabled={isAnyBattleActive || character.stats.hp <= 0}
-                className="flex-1 h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg disabled:opacity-50 transition-all active:scale-95"
-              >
-                <span className="flex items-center gap-2">
-                  <Zap className="w-6 h-6" />
-                  快速战斗
-                </span>
-              </Button>
+              <div className="text-xs text-slate-500 mt-1">
+                战斗次数: {battleCount}
+              </div>
             </div>
-            
-            {/* 快速战斗怪物选择 */}
-            <div className="border-t border-slate-200 pt-3">
-              <div className="text-sm text-slate-600 mb-2">选择快速战斗目标（可选）：</div>
-              <ScrollArea className="h-32">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pr-2">
-                  {monsters.map((monster) => {
-                    const difficulty = getDifficultyLabel(monster);
-                    const isSelected = selectedMonster?.id === monster.id;
-                    return (
-                      <div
-                        key={monster.id}
-                        onClick={() => !isAnyBattleActive && setSelectedMonster(isSelected ? null : monster)}
-                        className={`cursor-pointer p-2 rounded-lg border-2 transition-all ${
-                          isSelected 
-                            ? 'border-green-500 bg-green-50 shadow-md' 
-                            : 'border-slate-200 hover:border-green-300 hover:bg-green-50/50'
-                        } ${isAnyBattleActive ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">{monster.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">{monster.name}</div>
-                            <div className="text-xs text-slate-500">Lv.{monster.level}</div>
-                          </div>
-                          <Badge className={`${difficulty.bg} ${difficulty.color} text-[10px] flex-shrink-0`}>
-                            {difficulty.text}
-                          </Badge>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-              {selectedMonster && (
-                <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
-                  <span>✓</span>
-                  <span>已选择 {selectedMonster.name}，点击其他怪物可更换，点击已选怪物可取消选择</span>
-                </div>
-              )}
-            </div>
+            <Button 
+              onClick={handleQuickBattle}
+              disabled={isAnyBattleActive || character.stats.hp <= 0}
+              className="flex-1 h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg disabled:opacity-50 transition-all active:scale-95"
+            >
+              <span className="flex items-center gap-2">
+                <Zap className="w-6 h-6" />
+                快速战斗
+              </span>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -1290,6 +1247,12 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
               </Badge>
             )}
           </CardTitle>
+          {selectedMonster && !isAnyBattleActive && (
+            <div className="mt-2 text-sm text-green-600 flex items-center gap-1">
+              <span>✓</span>
+              <span>已选择 {selectedMonster.name}，点击其他怪物可更换，点击已选怪物可取消选择</span>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-48">
@@ -1301,7 +1264,7 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
                   <Card 
                     key={monster.id}
                     className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-red-500 bg-red-50' : ''}`}
-                    onClick={() => !isAnyBattleActive && setSelectedMonster(monster)}
+                    onClick={() => !isAnyBattleActive && setSelectedMonster(isSelected ? null : monster)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-center gap-3">
@@ -1325,27 +1288,39 @@ export function BattleArea({ character, battle, onQuickBattle, addLog, isGodMode
             </div>
           </ScrollArea>
           
-          {/* 挑战按钮 */}
+          {/* 战斗按钮 */}
           {selectedMonster && !isAnyBattleActive && (
             <div className="mt-4 pt-4 border-t border-slate-200">
-              <div className="flex gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   onClick={() => setSelectedMonster(null)}
                   variant="outline"
-                  className="flex-1 h-14 text-lg font-bold"
+                  className="h-14 text-lg font-bold"
                 >
                   取消选择
                 </Button>
-                <Button
-                  onClick={() => handleBattle(selectedMonster)}
-                  disabled={isAnyBattleActive || character.stats.hp <= 0}
-                  className="flex-1 h-14 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg disabled:opacity-50 transition-all active:scale-95"
-                >
-                  <span className="flex items-center gap-2">
-                    <Swords className="w-5 h-5" />
-                    挑战 {selectedMonster.name}
-                  </span>
-                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => handleQuickBattle()}
+                    disabled={isAnyBattleActive || character.stats.hp <= 0}
+                    className="h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg disabled:opacity-50 transition-all active:scale-95"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Zap className="w-5 h-5" />
+                      快速战斗
+                    </span>
+                  </Button>
+                  <Button
+                    onClick={() => handleBattle(selectedMonster)}
+                    disabled={isAnyBattleActive || character.stats.hp <= 0}
+                    className="h-14 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg disabled:opacity-50 transition-all active:scale-95"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Swords className="w-5 h-5" />
+                      挑战
+                    </span>
+                  </Button>
+                </div>
               </div>
             </div>
           )}

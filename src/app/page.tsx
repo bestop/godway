@@ -1,25 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useGameState, GameTab } from '@/hooks/useGameState';
-import { CharacterPanel } from '@/components/game/CharacterPanel';
-import { BattleArea } from '@/components/game/BattleArea';
-import { Inventory } from '@/components/game/Inventory';
-import { Tribulation } from '@/components/game/Tribulation';
-import { Market } from '@/components/game/Market';
-import { MapArea } from '@/components/game/MapArea';
-import { GameLog } from '@/components/game/GameLog';
 import { StartScreen } from '@/components/game/StartScreen';
-import { QuestPanel } from '@/components/game/QuestPanel';
-import { AchievementPanel } from '@/components/game/AchievementPanel';
 import { RandomEventModal, EventResultModal } from '@/components/game/RandomEventModal';
-import { DailySignInPanel } from '@/components/game/DailySignInPanel';
-import { DungeonPanel } from '@/components/game/DungeonPanel';
 import { CheatCodeDialog } from '@/components/game/CheatCodeDialog';
-import { PetPanel } from '@/components/game/PetPanel';
-import { PetShop } from '@/components/game/PetShop';
-import { SkillPanel } from '@/components/game/SkillPanel';
-import { SamsaraPanel } from '@/components/game/SamsaraPanel';
+import { GameLog } from '@/components/game/GameLog';
+
+// 懒加载组件
+const CharacterPanel = lazy(() => import('@/components/game/CharacterPanel'));
+const BattleArea = lazy(() => import('@/components/game/BattleArea'));
+const Inventory = lazy(() => import('@/components/game/Inventory'));
+const Tribulation = lazy(() => import('@/components/game/Tribulation'));
+const Market = lazy(() => import('@/components/game/Market'));
+const MapArea = lazy(() => import('@/components/game/MapArea'));
+const QuestPanel = lazy(() => import('@/components/game/QuestPanel'));
+const AchievementPanel = lazy(() => import('@/components/game/AchievementPanel'));
+const DailySignInPanel = lazy(() => import('@/components/game/DailySignInPanel'));
+const DungeonPanel = lazy(() => import('@/components/game/DungeonPanel'));
+const PetPanel = lazy(() => import('@/components/game/PetPanel'));
+const PetShop = lazy(() => import('@/components/game/PetShop'));
+const SkillPanel = lazy(() => import('@/components/game/SkillPanel'));
+const SamsaraPanel = lazy(() => import('@/components/game/SamsaraPanel'));
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
